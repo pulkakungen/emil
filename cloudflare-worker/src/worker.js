@@ -56,6 +56,16 @@ const SLOT_GRACE_MIN = 60;
 // Så många senast skickade meddelanden undviks vid nästa slumpning.
 const RECENT_MEMORY = 25;
 
+// Hemmasysslorna (tvätt, städ, trädgård, löprunda) hinner han inte med
+// mitt i veckan förrän han är hemma, så de knuffarna skickas bara efter
+// 17.00 på vardagar. På helgerna gäller hela dygnets fönster.
+const HOME_TASK_WEEKDAY_START_MIN = 17 * 60;
+
+function homeTaskAllowed(minutesOfDay, weekday) {
+  const isWeekend = weekday === 0 || weekday === 6;
+  return isWeekend || minutesOfDay >= HOME_TASK_WEEKDAY_START_MIN;
+}
+
 /* --------------------------- hjälpare --------------------------- */
 
 function pick(arr) {
@@ -90,7 +100,8 @@ function stockholmParts(date) {
   const dateStr = `${parts.year}-${parts.month}-${parts.day}`;
   return {
     dateStr,
-    minutesOfDay: parseInt(parts.hour, 10) * 60 + parseInt(parts.minute, 10)
+    minutesOfDay: parseInt(parts.hour, 10) * 60 + parseInt(parts.minute, 10),
+    weekday: new Date(dateStr + "T12:00:00Z").getUTCDay() // 0=söndag ... 6=lördag
   };
 }
 
@@ -166,54 +177,36 @@ function pickWeighted(recent) {
   return pickFresh(RANDOM_POOL[0].list, recent);
 }
 
-// Ibland blir notisen en knuff till dagens uppgifter i stället för ren pepp,
-// men bara om uppgiften faktiskt är kvar att göra just nu.
-function chooseMessage(state, minutesOfDay, recent) {
-  const sameDay = state && state.dateStr;
-  const runDue = sameDay && state.runDueToday && !state.runDone;
-  const boringLeft = sameDay && !state.boringDone;
-  const treatLeft = sameDay && !state.treatDone;
-  const wifeLeft = sameDay && !state.wifeDone;
-  const thinkLeft = sameDay && !state.thinkDone;
-  const laundrySortLeft = sameDay && !state.laundrySortDone;
-  const laundryRunLeft = sameDay && !state.laundryRunDone;
-  const vacuumLeft = sameDay && !state.vacuumDone;
-  const gardenLeft = sameDay && !state.gardenDone;
-  const tidyLeft = sameDay && !state.tidyDone;
-  const cleanLeft = sameDay && !state.cleanDone;
+// Ibland blir notisen en knuff till en uppgift i stället för ren pepp,
+// men bara om uppgiften faktiskt är kvar att göra och bara ungefär var
+// tredje notis. Resten av tiden är det kärlek och pepp, som det ska vara.
+const NUDGE_CHANCE = 0.3;
 
-  if (runDue && minutesOfDay >= 10 * 60 && Math.random() < 0.4) {
-    return pickFresh(TASK_SPRING, recent);
+function chooseMessage(state, minutesOfDay, weekday, recent) {
+  if (!state || !state.dateStr) return pickWeighted(recent);
+
+  const homeOk = homeTaskAllowed(minutesOfDay, weekday);
+  const candidates = [];
+
+  // Uppgifter han kan göra var som helst, när som helst.
+  if (!state.boringDone && minutesOfDay < 15 * 60) candidates.push(TASK_TRAKIGT);
+  if (!state.treatDone && minutesOfDay >= 15 * 60) candidates.push(TASK_GOTT);
+  if (!state.wifeDone && minutesOfDay >= 11 * 60) candidates.push(TASK_FRU);
+  if (!state.thinkDone) candidates.push(TASK_TANK);
+
+  // Hemmasysslorna, bara när han rimligen är hemma.
+  if (homeOk) {
+    if (!state.laundrySortDone) candidates.push(TASK_SORTERA);
+    if (!state.laundryRunDone) candidates.push(TASK_TVATT);
+    if (!state.vacuumDone) candidates.push(TASK_DAMMSUG);
+    if (!state.tidyDone) candidates.push(TASK_NEDANVANING);
+    if (!state.cleanDone) candidates.push(TASK_STADA);
+    if (!state.gardenDone) candidates.push(TASK_TRADGARD);
+    if (state.runDueToday && !state.runDone) candidates.push(TASK_SPRING);
   }
-  if (boringLeft && minutesOfDay < 15 * 60 && Math.random() < 0.25) {
-    return pickFresh(TASK_TRAKIGT, recent);
-  }
-  if (treatLeft && minutesOfDay >= 15 * 60 && Math.random() < 0.25) {
-    return pickFresh(TASK_GOTT, recent);
-  }
-  if (wifeLeft && minutesOfDay >= 11 * 60 && Math.random() < 0.25) {
-    return pickFresh(TASK_FRU, recent);
-  }
-  if (thinkLeft && Math.random() < 0.2) {
-    return pickFresh(TASK_TANK, recent);
-  }
-  if (laundrySortLeft && minutesOfDay >= 9 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_SORTERA, recent);
-  }
-  if (laundryRunLeft && minutesOfDay >= 9 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_TVATT, recent);
-  }
-  if (vacuumLeft && minutesOfDay >= 11 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_DAMMSUG, recent);
-  }
-  if (gardenLeft && minutesOfDay >= 10 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_TRADGARD, recent);
-  }
-  if (tidyLeft && minutesOfDay >= 12 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_NEDANVANING, recent);
-  }
-  if (cleanLeft && minutesOfDay >= 12 * 60 && Math.random() < 0.2) {
-    return pickFresh(TASK_STADA, recent);
+
+  if (candidates.length && Math.random() < NUDGE_CHANCE) {
+    return pickFresh(pick(candidates), recent);
   }
   return pickWeighted(recent);
 }
@@ -276,7 +269,7 @@ async function mergeHistory(env, dateStr, patch) {
 
 async function runSchedule(env) {
   const now = new Date();
-  const { dateStr, minutesOfDay } = stockholmParts(now);
+  const { dateStr, minutesOfDay, weekday } = stockholmParts(now);
 
   // Tyst natt. Ingenting lottas eller skickas utanför fönstret.
   if (minutesOfDay < WINDOW_START_MIN || minutesOfDay >= WINDOW_END_MIN) return;
@@ -293,7 +286,7 @@ async function runSchedule(env) {
   const stateRaw = await env.PUSH_KV.get(STATE_KEY);
   const state = stateRaw ? JSON.parse(stateRaw) : null;
   const recent = await getRecent(env);
-  const message = chooseMessage(state && state.dateStr === dateStr ? state : null, minutesOfDay, recent);
+  const message = chooseMessage(state && state.dateStr === dateStr ? state : null, minutesOfDay, weekday, recent);
 
   const delivered = await sendPush(env, message);
   if (!delivered) return; // försök igen vid nästa körning inom respitfönstret
