@@ -1,0 +1,32 @@
+<!--
+  PLATSHÅLLARE. Byt ut hela den här filen mot din egen tvättbjörns-SVG
+  (behåll filnamnet raccoon.svg) så uppdateras appen automatiskt.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Tvättbjörn">
+  <g>
+    <!-- öron -->
+    <ellipse cx="52" cy="58" rx="24" ry="26" fill="#6b6b76"/>
+    <ellipse cx="148" cy="58" rx="24" ry="26" fill="#6b6b76"/>
+    <ellipse cx="52" cy="60" rx="13" ry="15" fill="#d9a7a7"/>
+    <ellipse cx="148" cy="60" rx="13" ry="15" fill="#d9a7a7"/>
+    <!-- huvud -->
+    <ellipse cx="100" cy="106" rx="70" ry="62" fill="#8d8d99"/>
+    <!-- ansiktsmask -->
+    <path d="M42 96c14-16 30-20 58-20s44 4 58 20c-6 26-26 40-58 40S48 122 42 96z" fill="#f2efe9"/>
+    <ellipse cx="68" cy="102" rx="24" ry="20" fill="#3a3a44"/>
+    <ellipse cx="132" cy="102" rx="24" ry="20" fill="#3a3a44"/>
+    <!-- ögon -->
+    <circle cx="70" cy="100" r="9" fill="#ffffff"/>
+    <circle cx="130" cy="100" r="9" fill="#ffffff"/>
+    <circle cx="71" cy="101" r="5" fill="#1d1d24"/>
+    <circle cx="131" cy="101" r="5" fill="#1d1d24"/>
+    <circle cx="73" cy="98" r="2" fill="#ffffff"/>
+    <circle cx="133" cy="98" r="2" fill="#ffffff"/>
+    <!-- nos och mun -->
+    <ellipse cx="100" cy="126" rx="11" ry="8" fill="#1d1d24"/>
+    <path d="M100 134c0 8-8 10-13 6M100 134c0 8 8 10 13 6" stroke="#1d1d24" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- kinder -->
+    <ellipse cx="52" cy="124" rx="10" ry="6" fill="#f2a9be" opacity="0.65"/>
+    <ellipse cx="148" cy="124" rx="10" ry="6" fill="#f2a9be" opacity="0.65"/>
+  </g>
+</svg>

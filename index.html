@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Tvättis 🦝</title>
+<meta name="theme-color" content="#2b2340" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="stars-bg" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-name">Tvättis</span>
+    <span class="brand-sub">din personliga hejarklack</span>
+  </div>
+  <div class="topbar-right">
+    <div class="chip" title="Dagar i rad med allt avklarat">🔥 <span id="streak-count">0</span></div>
+    <div class="chip" title="Kärlek du fått">💖 <span id="hearts-count">0</span></div>
+    <button id="notif-btn" class="icon-btn" title="Slå på notiser">🔔</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="stage">
+    <div id="raccoon-wrap" class="raccoon-wrap" title="Klappa tvättbjörnen">
+      <img id="raccoon" class="raccoon" src="raccoon.svg" alt="Tvättbjörn" />
+    </div>
+    <div id="bubble" class="bubble">Hej älskling! Klappa mig så säger jag något fint. 🦝</div>
+  </section>
+
+  <section class="progress-card">
+    <div class="progress-label">
+      <span>Dagens uppgifter</span>
+      <span id="progress-text">0 / 0</span>
+    </div>
+    <div class="bar"><div id="progress-fill" class="bar-fill"></div></div>
+  </section>
+
+  <ul id="task-list" class="task-list"></ul>
+
+  <section id="run-info" class="run-info"></section>
+
+  <footer class="footer">
+    <button id="reset-btn" class="text-btn">Nollställ appen</button>
+  </footer>
+
+</main>
+
+<div id="toast-layer"></div>
+<div id="confetti-layer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
