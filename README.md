@@ -79,11 +79,23 @@ Pusha sedan om, så bygger GitHub Pages om appen automatiskt.
    **Android**: menyn, "Installera app".
 3. Tryck på 🔔 i appen och godkänn notiser.
 
-## Byta ut tvättbjörnen
+## Tvättbjörnen
 
-Lägg din egen SVG som `raccoon.svg` (samma filnamn) så byts bilden
-automatiskt. Ikonerna i `icons/` är enkla platshållare och kan bytas mot
-egna PNG:er på 192x192 och 512x512.
+Bilderna ligger i `raccoons/` och är utklippta ur de tre arken
+`tvättbjörnar 1-3.svg`. De är grupperade efter humör i listan `POSES`
+högst upp i `app.js`:
+
+| Läge | När den visas |
+| --- | --- |
+| `idle` | vanligt vardagsläge |
+| `sleep` | efter 21 och före 07 |
+| `run` | när löprundan är aktuell och inte avbockad |
+| `work` | när hemmasysslor är kvar efter 17 |
+| `happy` | när han klappar tvättbjörnen |
+| `cheer` | när dagens lista är klar |
+
+Vill du byta ut en pose lägger du in en ny bild i `raccoons/` och skriver
+in filnamnet (utan ändelse) i rätt lista.
 
 ## Adresser i workern
 

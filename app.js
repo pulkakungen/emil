@@ -32,6 +32,42 @@ const TASKS = [
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }
 ];
 
+/* ---------------- tvättbjörnens poser ----------------
+   Bilderna ligger i mappen raccoons och är utklippta ur de tre arken.
+   Lägg till fler filer där och skriv in namnen i listorna nedan. */
+const POSES = {
+  idle: ["idle-stand", "idle-upright", "idle-sit", "idle-sit2", "idle-sit3", "idle-front"],
+  happy: ["happy-hug", "happy-wave", "happy-walk", "happy-belly"],
+  cheer: ["cheer-arms", "cheer-jump", "cheer-hang", "cheer-roll"],
+  sleep: ["sleep-curl", "sleep-curl2", "sleep-lie", "sleep-lie2"],
+  run: ["run-leap", "run-dash", "run-slide"],
+  work: ["work-dig", "work-dig2", "work-crouch"]
+};
+
+// Kvällsläge: efter 21 lägger sig tvättbjörnen till ro.
+function nightTime() {
+  const h = new Date().getHours();
+  return h >= 21 || h < 7;
+}
+
+// Vilket vilo-läge som gäller just nu: sovande på kvällen, löparpose när
+// löprundan är aktuell, sysslo-pose när hemmagörat är kvar på eftermiddagen,
+// annars vanligt lugnt läge.
+function idleMood() {
+  if (nightTime()) return "sleep";
+  const runTask = TASKS.find((t) => t.everyDays);
+  if (runTask && isTaskActive(runTask) && !state.done[runTask.id] && Math.random() < 0.5) return "run";
+  const choresLeft = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada"]
+    .some((id) => !state.done[id]);
+  if (choresLeft && new Date().getHours() >= 17 && Math.random() < 0.4) return "work";
+  return "idle";
+}
+
+function setPose(mood) {
+  const list = POSES[mood] || POSES.idle;
+  document.getElementById("raccoon").src = "raccoons/" + pick(list) + ".png";
+}
+
 /* --------- små pepptexter i appen om worker inte svarar --------- */
 const FALLBACK_MESSAGES = [
   "Jag älskar dig, älskling. Det var allt. 🦝❤️",
@@ -124,6 +160,9 @@ function rolloverDay() {
 
 function isTaskActive(task) {
   if (!task.everyDays) return true;
+  // redan avbockad idag: ligger kvar i listan resten av dagen, annars
+  // skulle rullande uppgifter försvinna i samma stund de kryssades i
+  if (state.done[task.id]) return true;
   const due = state.due[task.id] || state.dateStr;
   return daysBetween(due, state.dateStr) >= 0; // förfallen eller exakt idag
 }
@@ -174,6 +213,8 @@ function toggleTask(id) {
     state.lastAllDoneDate = state.dateStr;
     state.hearts += 20;
     celebrate();
+    setPose("cheer");
+    clearTimeout(poseTimer);
     say("Allt klart idag! Du är dagens tvättbjörn, älskling 🏆");
   }
 
@@ -240,10 +281,14 @@ function renderRunInfo() {
 }
 
 function showToast(message) {
+  const layer = document.getElementById("toast-layer");
+  // håll högst två i taget, annars täcker de halva skärmen när han
+  // bockar av flera uppgifter snabbt efter varandra
+  while (layer.children.length >= 2) layer.firstChild.remove();
   const toast = document.createElement("div");
   toast.className = "toast";
   toast.textContent = message;
-  document.getElementById("toast-layer").appendChild(toast);
+  layer.appendChild(toast);
   setTimeout(() => toast.classList.add("show"), 10);
   setTimeout(() => {
     toast.classList.remove("show");
@@ -367,9 +412,12 @@ async function loadMessages() {
 
 /* --------------------------- start --------------------------- */
 
+let poseTimer = null;
+
 function init() {
   loadState();
   render();
+  setPose(allDoneToday() ? "cheer" : idleMood());
   say(pick(messagePool));
 
   document.getElementById("task-list").addEventListener("click", (e) => {
@@ -386,6 +434,11 @@ function init() {
     void raccoon.offsetWidth; // tvinga om animationen
     raccoon.classList.add("bounce");
     say(pick(messagePool));
+    if (!allDoneToday()) {
+      setPose("happy");
+      clearTimeout(poseTimer);
+      poseTimer = setTimeout(() => setPose(idleMood()), 3000);
+    }
   });
 
   document.getElementById("notif-btn").addEventListener("click", async () => {

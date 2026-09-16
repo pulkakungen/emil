@@ -1,5 +1,5 @@
-const CACHE_NAME = "tvattis-v1";
-const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./raccoon.svg"];
+const CACHE_NAME = "tvattis-v3";
+const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./raccoons/idle-upright.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_FILES)));
