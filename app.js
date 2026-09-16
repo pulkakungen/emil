@@ -20,6 +20,8 @@ const TASKS = [
   { id: "gott", emoji: "🍫", text: "Unna dig något gott", hint: "Kaffe, kaka, bad, en halvtimme i soffan. Du bestämmer." },
   { id: "fru", emoji: "💌", text: "Skicka ett gulligt meddelande till din fru", hint: "En rad räcker. Hon sparar den hela dagen." },
   { id: "tankfru", emoji: "💭", text: "Tänk på din fru!", hint: "Tio sekunder. Minns något du gillar med henne, bara för dig själv." },
+  { id: "tvatt", emoji: "🧺", text: "Sortera och kör en maskin tvätt", hint: "Tvättbjörnen är personligt engagerad i den här uppgiften." },
+  { id: "tradgard", emoji: "🌿", text: "Ta en runda i trädgården", hint: "Bara gå ut och titta. Räknas även om du inte gör något." },
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }
 ];
 
@@ -319,6 +321,8 @@ function syncToWorker() {
       treatDone: !!state.done.gott,
       wifeDone: !!state.done.fru,
       thinkDone: !!state.done.tankfru,
+      laundryDone: !!state.done.tvatt,
+      gardenDone: !!state.done.tradgard,
       runDone: !!state.done.spring,
       runDueToday: runTask ? isTaskActive(runTask) : false,
       allDoneToday: allDoneToday(),

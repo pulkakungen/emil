@@ -14,6 +14,8 @@ Sassibrass och ligger kvar i repot `pulkakungen/Sassibrass`, i mappen
   * Unna dig något gott (varje dag)
   * Skicka ett gulligt meddelande till din fru (varje dag)
   * Tänk på din fru! (varje dag)
+  * Sortera och kör en maskin tvätt (varje dag)
+  * Ta en runda i trädgården (varje dag)
   * Spring en runda (rullande var tredje dag, räknas från senaste avbockning)
 * **Notiser**: 5 slumpade tider per dygn, alltid mellan **06.15 och 23.45**.
   Tyst mellan 23.45 och 06.15.
