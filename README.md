@@ -1,66 +1,95 @@
 # Tvättis 🦝
 
-Liten app till Emil: fem uppgifter om dagen och kärleks- och peppnotiser
-som slumpas ut över dygnet.
+Egen liten app till Emil: dagens uppgifter och kärleks- och peppnotiser
+som slumpas ut över dygnet. Helt fristående, ingen koppling till någon
+annan app.
 
-Själva appen ligger här i roten. Push-servern (Cloudflare worker) delas med
-Sassibrass och ligger kvar i repot `pulkakungen/Sassibrass`, i mappen
-`cloudflare-worker`. Allt som rör tvättbjörnen ligger där under `/rc/`.
+* `index.html`, `app.js`, `style.css`, `sw.js`, `manifest.json` är själva appen
+* `cloudflare-worker/` är push-servern som skickar notiserna
 
-## Så funkar det
+## Uppgifterna
 
-* **Uppgifter** (i `app.js`, listan `TASKS`):
-  * Gör något tråkigt som du inte vill göra (varje dag)
-  * Unna dig något gott (varje dag)
-  * Skicka ett gulligt meddelande till din fru (varje dag)
-  * Tänk på din fru! (varje dag)
-  * Sortera och kör en maskin tvätt (varje dag)
-  * Ta en runda i trädgården (varje dag)
-  * Spring en runda (rullande var tredje dag, räknas från senaste avbockning)
-* **Notiser**: 5 slumpade tider per dygn, alltid mellan **06.15 och 23.45**.
-  Tyst mellan 23.45 och 06.15.
-* Notiserna är mest ren kärlek och pepp, men blir ibland en knuff om en
-  uppgift fortfarande är ogjord (appen synkar status till servern).
-* Klapp på tvättbjörnen ger en slumpad kärlekshälsning i pratbubblan.
-* Streak räknas upp varje dag där allt på listan blev avbockat.
+Ligger i listan `TASKS` högst upp i `app.js`. Lägg till, ta bort eller
+skriv om fritt. Varje uppgift behöver ett unikt id, en emoji och en text.
+`everyDays: 3` gör uppgiften rullande var tredje dag räknat från senaste
+avbockningen.
 
-## Byta ut tvättbjörnen
+1. Gör något tråkigt som du inte vill göra
+2. Unna dig något gott
+3. Skicka ett gulligt meddelande till din fru
+4. Tänk på din fru!
+5. Sortera och lägg in en tvätt
+6. Kör en maskin tvätt
+7. Dammsug ett rum
+8. Plocka undan på nedanvåningen
+9. Städa nåt!
+10. Ta en runda i trädgården
+11. Spring en runda (rullande var tredje dag)
 
-Lägg din egen SVG som `raccoon.svg` (samma filnamn) så byts
-bilden automatiskt. Ikonerna i `icons/` är enkla platshållare
-och kan bytas mot riktiga PNG:er på 192x192 och 512x512.
+## Notiserna
 
-## Ändra meddelanden
+Fem slumpade tider per dygn, minst 45 minuter isär, alltid mellan
+**06.15 och 23.45**. Helt tyst mellan 23.45 och 06.15. Samma meddelande
+återkommer inte förrän 25 notiser senare. Om en uppgift fortfarande är
+ogjord blir en notis ibland en knuff om just den i stället för ren pepp.
 
-Alla notistexter ligger i `cloudflare-worker/src/raccoon-messages.js` (i Sassibrass-repot),
-uppdelade i kärlek, pepp, bus, fånigt och knuffar per uppgift. Ändra fritt
-och deploya sedan om workern:
+Texterna ligger i `cloudflare-worker/src/messages.js`, uppdelade i kärlek,
+pepp, bus, fånigt och en hög per uppgift. Antal notiser per dygn ändras
+med `PUSHES_PER_DAY` i `cloudflare-worker/src/worker.js`, och tysta
+perioden med `WINDOW_START_MIN` och `WINDOW_END_MIN` i samma fil.
+
+## Sätta upp push första gången
+
+Allt görs i mappen `cloudflare-worker`:
 
 ```bash
 cd cloudflare-worker
 npm install
+
+# 1. Skapa lagringen och klistra in id:t i wrangler.toml
+npx wrangler kv namespace create PUSH_KV
+
+# 2. Skapa nycklarna
+npm run vapid
+
+# 3. Lägg in dem som hemligheter (klistra in när den frågar)
+npx wrangler secret put VAPID_PUBLIC_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put VAPID_SUBJECT      # t.ex. mailto:din@epost.se
+
+# 4. Deploya
 npm run deploy
 ```
 
-Antal notiser per dygn ändras med `PUSHES_PER_DAY` i
-`cloudflare-worker/src/raccoon.js`. Tysta perioden styrs av
-`WINDOW_START_MIN` och `WINDOW_END_MIN` i samma fil.
+Wrangler skriver ut workerns adress. Klistra in den, och den publika
+VAPID-nyckeln, högst upp i `app.js`:
 
-## Adresser i workern
+```js
+const PUSH_WORKER_URL = "https://tvattis-push.ditt-konto.workers.dev";
+const VAPID_PUBLIC_KEY = "B...";
+```
 
-Samma worker som Sassibrass, allt för tvättbjörnen ligger under `/rc/`:
+Pusha sedan om, så bygger GitHub Pages om appen automatiskt.
 
-| Adress | Vad den gör |
-| --- | --- |
-| `/rc/admin/status` | Visar om notiser är påslagna och dagens lottade tider |
-| `/rc/admin/send-test` | Skickar en testnotis direkt |
-| `/rc/admin/send?text=Hej` | Skickar ett eget meddelande på direkten |
-| `/rc/admin/reroll` | Lottar om dagens tider |
-
-## Installera på hans telefon
+## Installera på telefonen
 
 1. Öppna appens adress i webbläsaren.
 2. **iPhone**: dela-knappen, "Lägg till på hemskärmen". Notiser fungerar
    bara när appen startas från hemskärmen.
    **Android**: menyn, "Installera app".
 3. Tryck på 🔔 i appen och godkänn notiser.
+
+## Byta ut tvättbjörnen
+
+Lägg din egen SVG som `raccoon.svg` (samma filnamn) så byts bilden
+automatiskt. Ikonerna i `icons/` är enkla platshållare och kan bytas mot
+egna PNG:er på 192x192 och 512x512.
+
+## Adresser i workern
+
+| Adress | Vad den gör |
+| --- | --- |
+| `/admin/status` | Visar om notiser är påslagna och dagens lottade tider |
+| `/admin/send-test` | Skickar en testnotis direkt |
+| `/admin/send?text=Hej` | Skickar ett eget meddelande på direkten |
+| `/admin/reroll` | Lottar om dagens tider |

@@ -12,15 +12,22 @@
 const STORAGE_KEY = "tvattis_state_v1";
 const MESSAGE_CACHE_KEY = "tvattis_messages_v1";
 
-const PUSH_WORKER_URL = "https://sassibrass-push.bella-sassibrass.workers.dev/rc";
-const VAPID_PUBLIC_KEY = "BD3EfJvaUYdJgWzqt-OhSEPOIQcQKUkPjwqx1-gzD5iowBG6Lso6Zi591K3Xk8jd7MSOtdDtrxKaaF1dZTGa5fw";
+// Fyll i efter att du deployat workern första gången (se README).
+// Adressen skrivs ut av wrangler, t.ex. https://tvattis-push.ditt-konto.workers.dev
+const PUSH_WORKER_URL = "FYLL_I_WORKER_ADRESSEN";
+// Publika VAPID-nyckeln från `npm run vapid` i mappen cloudflare-worker.
+const VAPID_PUBLIC_KEY = "FYLL_I_PUBLIKA_VAPID_NYCKELN";
 
 const TASKS = [
   { id: "trakigt", emoji: "😤", text: "Gör något tråkigt som du inte vill göra", hint: "Tio minuter räcker. Fult och snabbt slår perfekt och aldrig." },
   { id: "gott", emoji: "🍫", text: "Unna dig något gott", hint: "Kaffe, kaka, bad, en halvtimme i soffan. Du bestämmer." },
   { id: "fru", emoji: "💌", text: "Skicka ett gulligt meddelande till din fru", hint: "En rad räcker. Hon sparar den hela dagen." },
   { id: "tankfru", emoji: "💭", text: "Tänk på din fru!", hint: "Tio sekunder. Minns något du gillar med henne, bara för dig själv." },
-  { id: "tvatt", emoji: "🧺", text: "Sortera och kör en maskin tvätt", hint: "Tvättbjörnen är personligt engagerad i den här uppgiften." },
+  { id: "tvatt-sortera", emoji: "🧺", text: "Sortera och lägg in en tvätt", hint: "Vitt för sig, kulört för sig. Maskinen är laddad och redo." },
+  { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Tryck på knappen. Tvättbjörnen är personligt engagerad i den här." },
+  { id: "dammsug", emoji: "🔌", text: "Dammsug ett rum", hint: "Ett rum räcker. Välj det som stör dig mest." },
+  { id: "nedanvaning", emoji: "🧹", text: "Plocka undan på nedanvåningen", hint: "En runda med korgen. Allt som ligger fel åker med." },
+  { id: "stada", emoji: "🧼", text: "Städa nåt!", hint: "Vad som helst. En yta, ett skåp, en hylla. Du väljer." },
   { id: "tradgard", emoji: "🌿", text: "Ta en runda i trädgården", hint: "Bara gå ut och titta. Räknas även om du inte gör något." },
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }
 ];
@@ -321,8 +328,12 @@ function syncToWorker() {
       treatDone: !!state.done.gott,
       wifeDone: !!state.done.fru,
       thinkDone: !!state.done.tankfru,
-      laundryDone: !!state.done.tvatt,
+      laundrySortDone: !!state.done["tvatt-sortera"],
+      laundryRunDone: !!state.done["tvatt-kor"],
+      vacuumDone: !!state.done.dammsug,
       gardenDone: !!state.done.tradgard,
+      tidyDone: !!state.done.nedanvaning,
+      cleanDone: !!state.done.stada,
       runDone: !!state.done.spring,
       runDueToday: runTask ? isTaskActive(runTask) : false,
       allDoneToday: allDoneToday(),

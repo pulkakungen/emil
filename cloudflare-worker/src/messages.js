@@ -1,0 +1,190 @@
+/* =========================================================
+   Meddelanden till tvättbjörnsappen (maken)
+
+   Det här är källan till ALLA push-notiser i appen. Vill du ändra,
+   lägga till eller ta bort ett meddelande gör du det här, sparar och
+   kör `npm run deploy` i mappen cloudflare-worker.
+
+   Smeknamn som används: älskling, äcklis, gullis, herr tacos, snutt.
+   ========================================================= */
+
+// Ren kärlek
+export const LOVE = [
+  "Bara så du vet: jag älskar dig, älskling. Hela dagen, inte bara ibland. ❤️",
+  "Tänkte på dig nu. Igen. Det händer ungefär hela tiden, äcklis. 💭",
+  "Du är det bästa jag har, äcklis. Punkt slut.",
+  "Om jag fick välja om skulle jag välja dig igen, gullis. Varje gång. 💍",
+  "Jag är så stolt över dig, herr tacos. Även när du själv inte fattar varför.",
+  "Du gör mitt liv mjukare bara genom att finnas i det, älskling. 🤍",
+  "Påminnelse: du är älskad precis som du är idag. Inte som du borde vara. Som du ÄR.",
+  "Hemma är inte en plats, det är du, snutt. 🏠",
+  "Du är min favoritmänniska, gullis. Det är inte ens nära mellan tvåan och dig.",
+  "Tack för att du är du, älskling. Jag hade inte orkat med någon annan. 😌",
+  "Du behöver inte prestera något för att förtjäna min kärlek. Du har den redan. 💗",
+  "Jag ser allt du gör, äcklis. Även det ingen annan lägger märke till.",
+  "Om du haft en tung dag: jag håller i dig ikväll. 🛋️",
+  "Du är snäll, och det är den mest underskattade superkraften som finns, äcklis.",
+  "Herr tacos, du luktar gott och är fin i håret. Det var allt. Slut på meddelandet.",
+  "Jag är på ditt lag. Alltid. Även när du har fel. Särskilt då. 😄",
+  "Du är inte för mycket och inte för lite. Du är precis lagom, älskling.",
+  "Jag längtar hem till dig. 🥰"
+];
+
+// Pepp och coachning
+export const PEP = [
+  "Du fixar det här, älskling. Ett steg i taget. 💪",
+  "Kom igen nu, snutt! En sak. Bara en. Sen är du igång.",
+  "Det svåraste är att börja. Resten är bara att fortsätta, gullis.",
+  "Du har klarat 100 procent av dina hittills värsta dagar. Statistiken är på din sida. 📈",
+  "Halvfärdigt slår oftast ogjort, äcklis. Gör det halvdant och var stolt ändå.",
+  "Andas. Axlarna ner. Du har tid. ✨",
+  "Fem minuter. Sätt en timer och gör bara fem minuter, herr tacos. Sen får du sluta.",
+  "Du behöver inte vara motiverad. Du behöver bara börja, så kommer motivationen springande efter. 🏃",
+  "Du är starkare än det där som känns jobbigt just nu, älskling.",
+  "Idag måste inte bli perfekt. Idag räcker det med att bli gjort. ✅",
+  "Äcklis, du är på väg. Även när det känns som att du står still.",
+  "Jag hejar på dig härifrån. Osynliga pompoms, full volym. 📣",
+  "Om det känns tungt: det betyder att du lyfter något. Det är därför du blir starkare. 🏋️",
+  "Du får vara trött och ändå duktig, gullis. Det går utmärkt att vara båda.",
+  "Ta det som en tvättbjörn: rota igenom röran och ta det bästa du hittar. 🦝",
+  "En dålig timme är inte en dålig dag, äcklis. Starta om när du vill.",
+  "Du har redan gjort svårare saker än det här, herr tacos. Kom ihåg det.",
+  "Klart är bättre än perfekt. Kör på, älskling! 🚀"
+];
+
+// Busigt och flörtigt
+export const BUS = [
+  "Snyggaste i huset är du. Och du vet om det, äcklis. 😏",
+  "Tänkte på dig i duschen. Inget mer om det. 🚿",
+  "Herr tacos, du är farligt bra att titta på. Bara så du vet.",
+  "Om du gör klart dina grejer idag väntar något trevligt ikväll... 😌",
+  "Du har ingen aning om vad du gör med mig när du kavlar upp ärmarna, älskling.",
+  "Äcklis. Sluta vara så där attraktiv medan du gör helt vanliga saker. 🙃",
+  "Ursäkta att jag stör, jag ville bara flörta lite. Fortsätt med ditt. 😘",
+  "Gullis, ikväll är du min. Inga invändningar godtas.",
+  "Du får en puss när du kommer hem. Minst en. 💋",
+  "Jag skickar det här bara för att få din uppmärksamhet. Det funkade. 😈",
+  "Äcklis, du är olagligt snygg när du är koncentrerad.",
+  "Kom hem tidigt så ska jag vara extra snäll mot dig. 🔥"
+];
+
+// Fånigt och tvättbjörnigt
+export const FANIGT = [
+  "Tvättbjörnsfakta: vi tvättar maten innan vi äter. Du borde också skölja av dagen och börja om. 🦝",
+  "Jag har rotat i soporna och hittat... kärlek. Till dig. Bara till dig, älskling. 🗑️❤️",
+  "Jag ser ut att bära mask, men du är den som stjäl hjärtan här, snutt. 🎭",
+  "Små tassar, stor kärlek. Det är hela min affärsidé. 🐾",
+  "Herr tacos, visste du att en grupp tvättbjörnar kallas gäng? Vi två är ett gäng. 🦝🦝",
+  "Jag skulle offra min sista sopsäck för dig, gullis.",
+  "Kliar det i händerna? Det är tvättbjörnsinstinkt. Ta något gott ur skåpet. 🍪",
+  "Bäst i test på att rota, näst bäst på att ge råd. Men jag försöker! 🦝",
+  "Jag har tvättat mina tassar och är redo att peppa dig professionellt.",
+  "Äcklis, om du var ett mellanmål hade du varit ett riktigt bra mellanmål. 🥨",
+  "Jag sov hela dagen och tänkte på dig hela natten. Så funkar nattdjur. 🌙",
+  "Nu blev jag rörd av mig själv. Ge dig själv en klapp på axeln från mig. 👏"
+];
+
+// Knuffar till dagens uppgifter
+export const TASK_TRAKIGT = [
+  "Dags för dagens tråkiga grej, älskling. Gör den ful och snabbt, så är den borta. 😤",
+  "Den där saken du skjuter på? Ta den nu, snutt. Den blir inte roligare av att vänta. ⏳",
+  "Tråkiga uppgiften kallar, gullis. Tio minuter, sen är du fri. 🧹",
+  "Gör det tråkiga först idag, äcklis. Belöningen känns dubbelt så bra efteråt.",
+  "Herr tacos, en obehaglig grej avklarad ger en dag som känns mycket lättare. Kör! 💥"
+];
+
+export const TASK_GOTT = [
+  "Glöm inte unna dig något gott idag, älskling. Det är faktiskt en uppgift. 🍫",
+  "Order från tvättbjörnen: gör något som känns skönt idag, äcklis. 🛁",
+  "Du förtjänar något gott, gullis. Inte för att du presterat, utan för att du finns. 🍰",
+  "Ta det där goda du tänkte på. Ja, just det. Gör det, äcklis. ☕",
+  "Herr tacos, har du unnat dig något idag? Om inte: fixa det nu. 🌮"
+];
+
+export const TASK_FRU = [
+  "Psst, älskling. Har du skickat något gulligt till din fru idag? 💌",
+  "En rad till frugan, snutt. Hon blir lika glad varje gång. 🥰",
+  "Gullis, skriv något fint till henne nu. Du behöver inte hitta på något smart, bara snällt. ✍️",
+  "Äcklis, hon tänker på dig just nu. Passa på att skicka något tillbaka. 💕",
+  "Herr tacos, ett litet meddelande hem gör hela hennes dag. Kör! 📱",
+  "Dagens enklaste uppgift: säg något kärt till din fru. Du är ju bra på det. ❤️"
+];
+
+export const TASK_TANK = [
+  "Tänk på din fru! 💭❤️",
+  "Stanna upp tio sekunder och tänk på henne, älskling. Bara det. 💭",
+  "Äcklis, minns något du gillar med din fru just nu. Ja, precis det där. 🥰",
+  "Gullis, hon finns där hemma och tycker att du är bäst. Tänk på det en stund. 🏠",
+  "Äcklis, blunda och tänk på er två. Sen kan du fortsätta med dagen. ✨",
+  "Herr tacos, dagens finaste tanke är gratis: tänk på din fru. 💕"
+];
+
+export const TASK_SORTERA = [
+  "Sortera en tvätt, älskling. Det här är min gren. 🧺",
+  "Äcklis, vitt för sig och kulört för sig. Sen är du min hjälte. 🧦",
+  "En tvättbjörn ber dig snällt: sortera och lägg in en tvätt. 🦝🧺",
+  "Gullis, tvättkorgen tittar på dig. Gör något åt det. 👀",
+  "Herr tacos, sortera högen nu så slipper du berget på söndag. ⛰️"
+];
+
+export const TASK_TVATT = [
+  "Maskinen är laddad, älskling. Tryck på knappen. 🌀",
+  "Kör igång en maskin, snutt. En tvätt igång är en vuxenpoäng. ✨",
+  "Gullis, starta tvätten nu så är den klar innan kvällen. ⚙️",
+  "Äcklis, en knapptryckning och du är dagens vuxen. 🫡",
+  "Herr tacos, kör maskinen. Jag står bredvid och hejar. 🦝🌀"
+];
+
+export const TASK_DAMMSUG = [
+  "Dammsug ett rum, älskling. Bara ett. 🔌",
+  "Äcklis, ta det rum som stör dig mest och kör dammsugaren där. 🧹",
+  "Gullis, tio minuter med dammsugaren och rummet känns nytt. ✨",
+  "Snutt, dammråttorna har flyttat in igen. Visa dem vem som bor här. 🐭",
+  "Herr tacos, ett rum dammsugit är ett rum du kan vara stolt över. 🌟"
+];
+
+export const TASK_NEDANVANING = [
+  "En runda på nedanvåningen, älskling. Plocka undan det som ligger fel. 🧹",
+  "Äcklis, ta korgen och samla ihop skräpet en våning ner. Tio minuter. 🧺",
+  "Gullis, nedanvåningen ropar på dig. Den blir inte bättre av sig själv. 🙃",
+  "Snutt, plocka undan där nere så känns hela huset lättare. ✨",
+  "Herr tacos, en tvättbjörn plockar upp allt den ser. Gör som jag. 🦝"
+];
+
+export const TASK_STADA = [
+  "Städa nåt! Vad som helst. En yta räcker, älskling. 🧼",
+  "Äcklis, välj en enda yta och gör den fin. Sen är du klar. ✨",
+  "Fem minuters städning nu, gullis, och du är dagens hjälte. 🧽",
+  "Snutt, ta en hylla eller ett skåp. Bara ett. Kör! 🧹",
+  "Herr tacos, lite ordning gör huvudet lugnare. Städa något litet. 🌟"
+];
+
+export const TASK_TRADGARD = [
+  "Ta en runda i trädgården, älskling. Bara titta, det räknas. 🌿",
+  "Ut och sniffa lite luft, äcklis. Trädgården väntar. 🌤️",
+  "Gullis, en sväng i trädgården gör mer för humöret än du tror. 🌳",
+  "Snutt, ta en runda ute. Jag hade följt med om jag fick. 🦝🌿",
+  "Herr tacos, gå ut och inspektera ditt rike. 👑🌱"
+];
+
+export const TASK_SPRING = [
+  "Idag är det löpardag, älskling! Skorna på, ut och kläm en runda. 👟",
+  "Springrunda idag, snutt. Du kommer aldrig ångra att du gick ut. 🏃‍♂️",
+  "Dags att springa, gullis. Långsamt räknas också. Bara ut! 🌳",
+  "Löpardag, äcklis! Jag håller tummarna med alla fyra tassarna. 🦝🏃",
+  "Herr tacos, en runda idag så är du kung i kväll. Kör! 🏅"
+];
+
+export const TASK_KLART = [
+  "Allt avklarat idag, älskling! Jag är så stolt över dig. 🎉",
+  "Klart! Du är dagens tvättbjörn, äcklis. 🏆",
+  "Dagens lista är tom och mitt hjärta är fullt, gullis. ❤️"
+];
+
+// Vikter styr hur ofta varje kategori dyker upp i de slumpade notiserna.
+export const RANDOM_POOL = [
+  { list: LOVE, weight: 4 },
+  { list: PEP, weight: 3 },
+  { list: BUS, weight: 2 },
+  { list: FANIGT, weight: 2 }
+];
