@@ -20,6 +20,7 @@ import {
   TASK_NEDANVANING,
   TASK_STADA,
   TASK_SPRING,
+  SPECIAL_DAYS,
   LOVE,
   PEP,
   BUS,
@@ -211,6 +212,50 @@ function chooseMessage(state, minutesOfDay, weekday, recent) {
   return pickWeighted(recent);
 }
 
+/* --------------------------- märkesdagar --------------------------- */
+
+// Skickas en gång, strax efter att tysta natten tagit slut.
+const SPECIAL_HOUR_MIN = 7 * 60 + 30; // 07:30
+const SPECIAL_PREFIX = "special:";
+
+function daysUntil(dateStr, month, day) {
+  const today = new Date(dateStr + "T12:00:00Z");
+  let target = new Date(Date.UTC(today.getUTCFullYear(), month - 1, day, 12));
+  if (target < today) target = new Date(Date.UTC(today.getUTCFullYear() + 1, month - 1, day, 12));
+  return Math.round((target - today) / 86400000);
+}
+
+// Returnerar dagens märkesdagsmeddelande, eller null om inget ska skickas.
+function specialMessageFor(dateStr) {
+  for (const day of SPECIAL_DAYS) {
+    const left = daysUntil(dateStr, day.month, day.day);
+    if (left === 0) return { id: day.id + ":dag", text: pick(day.dayMessages) };
+    if (day.leadDays.includes(left)) {
+      const när = left === 1 ? "imorgon" : `om ${left} dagar`;
+      const text = pick(day.leadMessages)
+        .replace("{när}", när)
+        .replace("{När}", när.charAt(0).toUpperCase() + när.slice(1));
+      return { id: day.id + ":" + left, text };
+    }
+  }
+  return null;
+}
+
+async function sendSpecialIfDue(env, dateStr, minutesOfDay) {
+  if (minutesOfDay < SPECIAL_HOUR_MIN) return false;
+  const special = specialMessageFor(dateStr);
+  if (!special) return false;
+
+  const key = SPECIAL_PREFIX + special.id.split(":")[0] + ":" + dateStr;
+  if (await env.PUSH_KV.get(key)) return false;
+
+  const delivered = await sendPush(env, special.text);
+  if (!delivered) return false;
+  await env.PUSH_KV.put(key, special.text, { expirationTtl: 60 * 60 * 72 });
+  await rememberSent(env, special.text);
+  return true;
+}
+
 /* --------------------- dagens slumpade tider --------------------- */
 
 // Lottar fram dagens notistider en gång per dygn och sparar dem i KV,
@@ -276,6 +321,9 @@ async function runSchedule(env) {
 
   const hasSub = !!(await env.PUSH_KV.get(SUB_KEY));
   if (!hasSub) return;
+
+  // Märkesdagar går före allt annat och ligger utanför dagens lottade tider.
+  if (await sendSpecialIfDue(env, dateStr, minutesOfDay)) return;
 
   const slots = await getSchedule(env, dateStr, minutesOfDay);
   const due = slots.find(
@@ -379,7 +427,10 @@ async function handleRequest(request, env, url) {
         ? slots.map((s) => `  ${hhmm(s.at)}  ${s.sent ? "skickad ✅ " + (s.message || "") : "väntar"}`)
         : ["  (inga lottade än idag)"]),
       "",
-      `App-status: ${stateRaw || "appen har aldrig synkat"}`
+      `App-status: ${stateRaw || "appen har aldrig synkat"}`,
+      "",
+      "Märkesdagar:",
+      ...SPECIAL_DAYS.map((d) => `  ${d.id}: om ${daysUntil(dateStr, d.month, d.day)} dagar`)
     ];
     return text(lines.join("\n"));
   }

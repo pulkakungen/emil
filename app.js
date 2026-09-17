@@ -32,6 +32,40 @@ const TASKS = [
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }
 ];
 
+/* ---------------- märkesdagar ----------------
+   Visas som en rubrik i appen på dagen och dagarna innan.
+   Samma dagar finns i workern, som skickar notiserna. */
+const SPECIAL_DAYS = [
+  { month: 9, day: 7, emoji: "💍", name: "er bröllopsdag", leadDays: 7 },
+  { month: 2, day: 14, emoji: "❤️", name: "alla hjärtans dag", leadDays: 3 },
+  { month: 10, day: 4, emoji: "🥐", name: "kanelbullens dag", leadDays: 1 }
+];
+
+function daysUntilSpecial(day) {
+  const today = new Date(state.dateStr + "T12:00:00Z");
+  let target = new Date(Date.UTC(today.getUTCFullYear(), day.month - 1, day.day, 12));
+  if (target < today) target = new Date(Date.UTC(today.getUTCFullYear() + 1, day.month - 1, day.day, 12));
+  return Math.round((target - today) / 86400000);
+}
+
+function renderSpecialBanner() {
+  const box = document.getElementById("special-banner");
+  for (const day of SPECIAL_DAYS) {
+    const left = daysUntilSpecial(day);
+    if (left === 0) {
+      box.textContent = `${day.emoji} Idag är det ${day.name}!`;
+      box.hidden = false;
+      return;
+    }
+    if (left <= day.leadDays) {
+      box.textContent = `${day.emoji} ${left === 1 ? "Imorgon" : "Om " + left + " dagar"} är det ${day.name}.`;
+      box.hidden = false;
+      return;
+    }
+  }
+  box.hidden = true;
+}
+
 /* ---------------- tvättbjörnens poser ----------------
    Bilderna ligger i mappen raccoons och är utklippta ur de tre arken.
    Lägg till fler filer där och skriv in namnen i listorna nedan. */
@@ -259,6 +293,7 @@ function render() {
   });
 
   renderRunInfo();
+  renderSpecialBanner();
 }
 
 // Visar när nästa löprunda är inbokad, så det aldrig känns oklart.

@@ -188,3 +188,57 @@ export const RANDOM_POOL = [
   { list: BUS, weight: 2 },
   { list: FANIGT, weight: 2 }
 ];
+
+/* ---------------------------------------------------------
+   Märkesdagar
+
+   dayMessages skickas på själva dagen, leadMessages i förväg.
+   {när} byts ut mot "imorgon" eller "om 3 dagar". {När} ger stor bokstav.
+   --------------------------------------------------------- */
+export const SPECIAL_DAYS = [
+  {
+    id: "brollopsdag",
+    month: 9,
+    day: 7,
+    leadDays: [7, 3, 1],
+    dayMessages: [
+      "Idag är det er bröllopsdag! 💍 Grattis, älskling. Tack för varje år.",
+      "Bröllopsdag idag! 🥂 Du gifte dig med henne och hon skulle göra om det direkt.",
+      "Grattis på bröllopsdagen, herr tacos! Idag är ni två det finaste som finns. 💕"
+    ],
+    leadMessages: [
+      "Psst, er bröllopsdag är {när}. Du har hört det här först. 💍",
+      "{När} är det bröllopsdag, älskling. Blommor finns i affären. 💐",
+      "Räkna med mig: bröllopsdagen är {när}. Hinner du fixa något? 😌"
+    ]
+  },
+  {
+    id: "hjartans",
+    month: 2,
+    day: 14,
+    leadDays: [3, 1],
+    dayMessages: [
+      "Alla hjärtans dag! ❤️ Din fru är kär i dig, bara så du vet.",
+      "Glad alla hjärtans dag, äcklis. Krama henne extra idag. 💘",
+      "Hjärtans dag idag! Säg något fint till henne, det är hela uppgiften. 💌"
+    ],
+    leadMessages: [
+      "Alla hjärtans dag är {när}, gullis. Bara en vänlig tvättbjörn som viskar. ❤️",
+      "{När} är det alla hjärtans dag. Choklad? Blommor? Du bestämmer. 🍫"
+    ]
+  },
+  {
+    id: "kanelbulle",
+    month: 10,
+    day: 4,
+    leadDays: [1],
+    dayMessages: [
+      "KANELBULLENS DAG! 🥐 Det här är inte en övning, älskling. Skaffa en bulle.",
+      "Idag firar vi kanelbullen. Din uppgift: ät en. Gärna två. 🥯☕",
+      "Kanelbullens dag! Jag är en tvättbjörn, jag har redan ätit fyra. 🦝🥐"
+    ],
+    leadMessages: [
+      "{När} är det kanelbullens dag. Jäs degen ikväll så är du hjälte. 🥐"
+    ]
+  }
+];
