@@ -23,9 +23,13 @@ function putSecret(name, value) {
   });
 }
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const svar = await rl.question("Vilken e-postadress ska stå som avsändare? (t.ex. du@exempel.se) ");
-rl.close();
+// Adressen går att skicka med direkt: npm run keys -- du@exempel.se
+let svar = process.argv[2];
+if (!svar) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  svar = await rl.question("Vilken e-postadress ska stå som avsändare? (t.ex. du@exempel.se) ");
+  rl.close();
+}
 const epost = svar.trim().replace(/^mailto:/, "");
 if (!epost.includes("@")) {
   console.error("Det där såg inte ut som en e-postadress. Kör om kommandot.");
