@@ -49,15 +49,10 @@ npm install
 # 1. Skapa lagringen och klistra in id:t i wrangler.toml
 npx wrangler kv namespace create PUSH_KV
 
-# 2. Skapa nycklarna
-npm run vapid
+# 2. Skapa nycklarna och lägg upp dem, allt i ett steg
+npm run keys
 
-# 3. Lägg in dem som hemligheter (klistra in när den frågar)
-npx wrangler secret put VAPID_PUBLIC_KEY
-npx wrangler secret put VAPID_PRIVATE_KEY
-npx wrangler secret put VAPID_SUBJECT      # t.ex. mailto:din@epost.se
-
-# 4. Deploya
+# 3. Deploya
 npm run deploy
 ```
 

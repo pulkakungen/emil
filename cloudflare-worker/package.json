@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
-    "vapid": "node generate-vapid.mjs"
+    "vapid": "node generate-vapid.mjs",
+    "keys": "node set-keys.mjs"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"
