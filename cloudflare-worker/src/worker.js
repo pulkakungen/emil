@@ -30,7 +30,7 @@ import {
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type"
+  "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key"
 };
 
 const APP_TITLE = "Mrs Raccoon 🦝";
@@ -71,6 +71,94 @@ function homeTaskAllowed(minutesOfDay, weekday) {
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Allt under /admin kräver nyckeln som sätts med
+// `wrangler secret put ADMIN_TOKEN`. Appens egna anrop (/subscribe, /sync,
+// /vapid, /messages) är fortsatt öppna, de bär ingen hemlighet.
+function adminKeyOk(request, url, env) {
+  if (!env.ADMIN_TOKEN) return true; // ingen nyckel satt än, lås inte ute någon
+  const given = request.headers.get("X-Admin-Key") || url.searchParams.get("key") || "";
+  return given === env.ADMIN_TOKEN;
+}
+
+function denied() {
+  return new Response("Fel eller saknad nyckel. Lägg till ?key=... i adressen.", {
+    status: 401,
+    headers: { ...CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8" }
+  });
+}
+
+// Normaliserad lägesbild för föräldrapanelen, samma form som de andra
+// apparna lämnar, så panelen slipper veta hur den här är byggd inuti.
+async function buildSummary(env) {
+  const now = new Date();
+  const { dateStr } = stockholmParts(now);
+  const subRaw = await env.PUSH_KV.get(SUB_KEY);
+  const stateRaw = await env.PUSH_KV.get(STATE_KEY);
+  const state = stateRaw ? JSON.parse(stateRaw) : null;
+  const scheduleRaw = await env.PUSH_KV.get(SCHEDULE_PREFIX + dateStr);
+  const slots = scheduleRaw ? JSON.parse(scheduleRaw) : [];
+
+  // appens uppgifter ligger som namngivna flaggor, plocka ut dem som en lista
+  const LABELS = {
+    boringDone: "Tråkgrejen",
+    treatDone: "Något gott",
+    wifeDone: "Något för frun",
+    thinkDone: "Tankenöten",
+    laundrySortDone: "Sortera tvätt",
+    laundryRunDone: "Köra tvätt",
+    vacuumDone: "Dammsuga",
+    gardenDone: "Trädgården",
+    tidyDone: "Plocka undan",
+    cleanDone: "Städa",
+    runDone: "Springa"
+  };
+
+  const taskList = (rec) =>
+    Object.keys(LABELS)
+      .filter((k) => rec && (k !== "runDone" || rec.runDueToday))
+      .map((k) => ({ id: k, text: LABELS[k], done: !!(rec && rec[k]) }));
+
+  const tasks = taskList(state);
+
+  const history = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 86400000);
+    const key = HISTORY_PREFIX + stockholmParts(d).dateStr;
+    const raw = await env.PUSH_KV.get(key);
+    const rec = raw ? JSON.parse(raw) : null;
+    const list = rec ? taskList(rec) : [];
+    history.push({
+      date: stockholmParts(d).dateStr,
+      done: list.filter((t) => t.done).length,
+      total: list.length,
+      allDone: !!(rec && rec.allDoneToday)
+    });
+  }
+
+  return {
+    app: "mrs-raccoon",
+    title: "Mrs Raccoon",
+    child: "Emil",
+    now: now.toISOString(),
+    dateStr,
+    notifications: !!subRaw,
+    lastSyncAt: state ? state.updatedAt : null,
+    lastNagAt: null,
+    allDoneToday: !!(state && state.allDoneToday),
+    hunger: null,
+    happiness: null,
+    level: null,
+    streak: state && typeof state.streak === "number" ? state.streak : null,
+    petName: null,
+    doneToday: tasks.filter((t) => t.done).length,
+    totalToday: tasks.length,
+    tasks,
+    remindersSentToday: slots.filter((s) => s.sent).map((s) => s.message || "notis"),
+    affirmation: null,
+    history
+  };
 }
 
 function json(data, status = 200) {
@@ -413,6 +501,12 @@ async function handleRequest(request, env, url) {
   // Appen hämtar samma meddelanden som pushas, för pratbubblan i appen.
   if (path === "/messages" && request.method === "GET") {
     return json({ love: LOVE, pep: PEP, bus: BUS, fanigt: FANIGT });
+  }
+
+  if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
+
+  if (path === "/admin/summary" && request.method === "GET") {
+    return json(await buildSummary(env));
   }
 
   if (path === "/admin/status" && request.method === "GET") {
