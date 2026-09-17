@@ -597,6 +597,22 @@ async function handleRequest(request, env, url) {
     return text(lines.join("\n"));
   }
 
+  // Skriver dagens rad till kalkylarket direkt, för att testa kopplingen.
+  if (path === "/admin/sheet-now" && request.method === "GET") {
+    const { dateStr, minutesOfDay } = stockholmParts(new Date());
+    const stateRaw = await env.PUSH_KV.get(STATE_KEY);
+    const res = await maybeSendDailySheet(env, {
+      app: "mrs-raccoon",
+      title: "Mrs Raccoon",
+      dateStr,
+      minutesOfDay,
+      historyPrefix: HISTORY_PREFIX,
+      streak: stateRaw ? JSON.parse(stateRaw).streak ?? null : null,
+      force: true
+    });
+    return text(res.ok ? `Skrivet till arket ✅\n${res.date}: ${res.done} av ${res.total} klara` : `Gick inte: ${res.reason}`);
+  }
+
   if (path === "/admin/send-test" && request.method === "GET") {
     const ok = await sendPush(env, "Testnotis från tvättbjörnen! Ser du den här funkar allt 🦝✅");
     return text(ok ? "Skickad! Kolla telefonen 📬" : "Misslyckades, troligen finns ingen aktiv prenumeration.");
