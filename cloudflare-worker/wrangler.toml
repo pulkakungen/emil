@@ -11,9 +11,11 @@ kv_namespaces = [
 # Kör var 15:e minut dygnet runt. Workern filtrerar själv på svensk tid
 # och skickar aldrig något mellan 23.45 och 06.15.
 [triggers]
-# Var 15:e minut för notiserna, plus 21.58 och 22.58 UTC så att en av dem
-# alltid är 23.58 svensk tid, då dagens rad skrivs till kalkylarket.
-crons = ["*/15 * * * *", "58 21,22 * * *"]
+# Ett enda schema: var 15:e minut för notiserna, plus varje timme :58 så att
+# 23.58 svensk tid alltid träffas, då dagens rad skrivs till kalkylarket.
+# Workern filtrerar själv på svensk lokaltid. Ett schema per app håller oss
+# under gratisplanens gräns på fem cron-scheman per konto.
+crons = ["0,15,30,45,58 * * * *"]
 
 # Hemligheter (sätts med `npx wrangler secret put <NAMN>`, skrivs ALDRIG här):
 #   VAPID_PRIVATE_KEY
