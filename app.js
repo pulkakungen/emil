@@ -213,12 +213,6 @@ function isTaskActive(task) {
   return daysBetween(due, state.dateStr) >= 0; // förfallen eller exakt idag
 }
 
-// Sant om uppgiften står på dagens lista (rullande uppgifter bara när de förfallit).
-function isTaskDueToday(id) {
-  const task = TASKS.find((t) => t.id === id);
-  return !!task && isTaskActive(task);
-}
-
 function activeTasks() {
   return TASKS.filter(isTaskActive);
 }
@@ -423,26 +417,23 @@ async function refreshNotifButton() {
   btn.classList.toggle("active", !!sub);
 }
 
+// Skickar dagens lista till servern: den styr knuffarna och är samtidigt
+// underlaget till panelvyn, så inget som han gjort bara ligger i telefonen.
 function syncToWorker() {
-  const runTask = TASKS.find((t) => t.everyDays);
   fetch(PUSH_WORKER_URL + "/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      boringDone: !!state.done.trakigt,
-      treatDone: !!state.done.gott,
-      wifeDone: !!state.done.fru,
-      thinkDone: !!state.done.tankfru,
-      laundrySortDone: !isTaskDueToday("tvatt-sortera") || !!state.done["tvatt-sortera"],
-      laundryRunDone: !isTaskDueToday("tvatt-kor") || !!state.done["tvatt-kor"],
-      vacuumDone: !isTaskDueToday("dammsug") || !!state.done.dammsug,
-      gardenDone: !!state.done.tradgard,
-      tidyDone: !!state.done.nedanvaning,
-      cleanDone: !!state.done.stada,
-      runDone: !!state.done.spring,
-      runDueToday: runTask ? isTaskActive(runTask) : false,
+      dateStr: state.dateStr,
+      streak: state.streak,
+      hearts: state.hearts,
       allDoneToday: allDoneToday(),
-      streak: state.streak
+      tasks: activeTasks().map((t) => ({
+        id: t.id,
+        emoji: t.emoji,
+        text: t.text,
+        done: !!state.done[t.id]
+      }))
     })
   }).catch(() => {});
 }

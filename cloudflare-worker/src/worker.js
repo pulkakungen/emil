@@ -178,32 +178,46 @@ function pickWeighted(recent) {
   return pickFresh(RANDOM_POOL[0].list, recent);
 }
 
+// Vilken meddelandehög som hör till vilken uppgift i appen.
+const TASK_POOLS = {
+  trakigt: TASK_TRAKIGT,
+  gott: TASK_GOTT,
+  fru: TASK_FRU,
+  tankfru: TASK_TANK,
+  "tvatt-sortera": TASK_SORTERA,
+  "tvatt-kor": TASK_TVATT,
+  dammsug: TASK_DAMMSUG,
+  nedanvaning: TASK_NEDANVANING,
+  stada: TASK_STADA,
+  tradgard: TASK_TRADGARD,
+  spring: TASK_SPRING
+};
+
+// Sysslor han bara hinner med när han är hemma.
+const HOME_TASKS = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada", "tradgard", "spring"];
+
+// Uppgifter som passar bäst under en viss del av dagen.
+const TIME_WINDOWS = { trakigt: [0, 15 * 60], gott: [15 * 60, 24 * 60], fru: [11 * 60, 24 * 60] };
+
 // Ibland blir notisen en knuff till en uppgift i stället för ren pepp,
-// men bara om uppgiften faktiskt är kvar att göra och bara ungefär var
-// tredje notis. Resten av tiden är det kärlek och pepp, som det ska vara.
+// men bara om uppgiften är kvar att göra och bara ungefär var tredje notis.
+// Resten av tiden är det kärlek och pepp, som det ska vara.
 const NUDGE_CHANCE = 0.3;
 
 function chooseMessage(state, minutesOfDay, weekday, recent) {
-  if (!state || !state.dateStr) return pickWeighted(recent);
+  if (!state || !Array.isArray(state.tasks)) return pickWeighted(recent);
 
   const homeOk = homeTaskAllowed(minutesOfDay, weekday);
   const candidates = [];
 
-  // Uppgifter han kan göra var som helst, när som helst.
-  if (!state.boringDone && minutesOfDay < 15 * 60) candidates.push(TASK_TRAKIGT);
-  if (!state.treatDone && minutesOfDay >= 15 * 60) candidates.push(TASK_GOTT);
-  if (!state.wifeDone && minutesOfDay >= 11 * 60) candidates.push(TASK_FRU);
-  if (!state.thinkDone) candidates.push(TASK_TANK);
-
-  // Hemmasysslorna, bara när han rimligen är hemma.
-  if (homeOk) {
-    if (!state.laundrySortDone) candidates.push(TASK_SORTERA);
-    if (!state.laundryRunDone) candidates.push(TASK_TVATT);
-    if (!state.vacuumDone) candidates.push(TASK_DAMMSUG);
-    if (!state.tidyDone) candidates.push(TASK_NEDANVANING);
-    if (!state.cleanDone) candidates.push(TASK_STADA);
-    if (!state.gardenDone) candidates.push(TASK_TRADGARD);
-    if (state.runDueToday && !state.runDone) candidates.push(TASK_SPRING);
+  for (const task of state.tasks) {
+    if (task.done) continue;
+    const pool = TASK_POOLS[task.id];
+    if (!pool) continue;
+    if (HOME_TASKS.includes(task.id) && !homeOk) continue;
+    const window = TIME_WINDOWS[task.id];
+    if (window && (minutesOfDay < window[0] || minutesOfDay >= window[1])) continue;
+    candidates.push(pool);
   }
 
   if (candidates.length && Math.random() < NUDGE_CHANCE) {
@@ -305,7 +319,7 @@ async function mergeHistory(env, dateStr, patch) {
   const existing = raw ? JSON.parse(raw) : {};
   const merged = { ...existing, ...patch };
   await env.PUSH_KV.put(HISTORY_PREFIX + dateStr, JSON.stringify(merged), {
-    expirationTtl: 60 * 60 * 24 * 120
+    expirationTtl: 60 * 60 * 24 * 730
   });
   return merged;
 }
@@ -347,6 +361,149 @@ async function runSchedule(env) {
   await mergeHistory(env, dateStr, { pushes: slots.filter((s) => s.sent).map((s) => ({ at: s.sentAt, message: s.message })) });
 }
 
+
+/* --------------------------- panelvy ---------------------------
+
+   En enkel sida för Bella: en rad per dag, en kolumn per uppgift.
+   Klicka i en ruta för att rätta, rättningen vinner över telefonen.
+   Skydda den med en nyckel om du vill:
+     npx wrangler secret put PANEL_KEY
+   och lägg sedan till ?key=DIN_NYCKEL i adressen.
+   --------------------------------------------------------------- */
+
+// Kolumnordningen speglar uppgifterna i appen. Uppgifter som dyker upp i
+// historiken men saknas här hamnar sist, så inget tappas bort.
+const TASK_ORDER = [
+  { id: "trakigt", emoji: "😤", label: "Tråkig grej" },
+  { id: "gott", emoji: "🍫", label: "Unna sig" },
+  { id: "fru", emoji: "💌", label: "Meddelande till frun" },
+  { id: "tankfru", emoji: "💭", label: "Tänka på frun" },
+  { id: "tvatt-sortera", emoji: "🧺", label: "Sortera tvätt" },
+  { id: "tvatt-kor", emoji: "🌀", label: "Köra maskin" },
+  { id: "dammsug", emoji: "🔌", label: "Dammsuga" },
+  { id: "nedanvaning", emoji: "🧹", label: "10 saker" },
+  { id: "stada", emoji: "🧼", label: "Städa nåt" },
+  { id: "tradgard", emoji: "🌿", label: "Trädgårdsrunda" },
+  { id: "spring", emoji: "👟", label: "Springa" }
+];
+
+function panelAuthorized(url, env) {
+  if (!env.PANEL_KEY) return true;
+  return url.searchParams.get("key") === env.PANEL_KEY;
+}
+
+async function readHistory(env, dagar = 60) {
+  const idag = stockholmParts(new Date()).dateStr;
+  const datum = [];
+  for (let i = 0; i < dagar; i++) {
+    const d = new Date(idag + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - i);
+    datum.push(d.toISOString().slice(0, 10));
+  }
+  const poster = [];
+  for (const dateStr of datum) {
+    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
+    if (raw) poster.push({ dateStr, ...JSON.parse(raw) });
+  }
+  return poster;
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function panelHtml(poster, key) {
+  const veckodagar = ["sön", "mån", "tis", "ons", "tor", "fre", "lör"];
+
+  // extra uppgifter som finns i historiken men inte i den fasta ordningen
+  const kanda = new Set(TASK_ORDER.map((t) => t.id));
+  const extra = [];
+  for (const post of poster) {
+    for (const t of post.tasks || []) {
+      if (!kanda.has(t.id)) {
+        kanda.add(t.id);
+        extra.push({ id: t.id, emoji: t.emoji || "", label: t.text || t.id });
+      }
+    }
+  }
+  const kolumner = TASK_ORDER.concat(extra);
+
+  const rader = poster.map((post) => {
+    const karta = Object.fromEntries((post.tasks || []).map((t) => [t.id, t]));
+    const antalKlara = (post.tasks || []).filter((t) => t.done).length;
+    const antal = (post.tasks || []).length;
+    const weekday = veckodagar[new Date(post.dateStr + "T12:00:00Z").getUTCDay()];
+    const celler = kolumner.map((kol) => {
+      const t = karta[kol.id];
+      if (!t) return '<td class="cell empty" title="stod inte på listan den dagen">·</td>';
+      const rattad = post.corrected && kol.id in post.corrected ? " rattad" : "";
+      return `<td class="cell${t.done ? " klar" : " oklar"}${rattad}" data-date="${post.dateStr}" data-id="${kol.id}" data-done="${t.done ? 1 : 0}" title="Klicka för att rätta">${t.done ? "✓" : ""}</td>`;
+    }).join("");
+    const puffar = (post.pushes || []).length;
+    return `<tr><th class="dag"><span>${post.dateStr}</span><small>${weekday}</small></th>${celler}<td class="summa">${antalKlara}/${antal}</td><td class="summa notiser">${puffar}</td></tr>`;
+  }).join("");
+
+  const rubriker = kolumner.map((kol) => `<th class="kol"><span>${kol.emoji}</span><small>${escapeHtml(kol.label)}</small></th>`).join("");
+
+  return `<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mrs Raccoon · panel</title>
+<style>
+  :root { --gron: #85b84d; --morkgron: #20320f; --klar: #2f7d24; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 60px; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: #f4f8ec; color: var(--morkgron); }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.info { margin: 0 0 18px; color: #4e6b32; font-size: 14px; }
+  .wrap { overflow-x: auto; border: 1px solid rgba(37,66,18,0.18); border-radius: 16px; background: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid rgba(37,66,18,0.1); padding: 8px 6px; text-align: center; }
+  thead th { position: sticky; top: 0; background: var(--gron); color: #fff; font-size: 12px; }
+  .kol span { font-size: 16px; display: block; }
+  .kol small { font-weight: 600; display: block; max-width: 74px; line-height: 1.2; overflow-wrap: anywhere; }
+  th.dag { text-align: left; white-space: nowrap; background: #f4f8ec; position: sticky; left: 0; }
+  th.dag small { display: block; font-weight: 500; color: #4e6b32; }
+  .cell { cursor: pointer; font-weight: 800; min-width: 44px; user-select: none; }
+  .cell.klar { background: rgba(47,125,36,0.16); color: var(--klar); }
+  .cell.oklar:hover { background: rgba(47,125,36,0.07); }
+  .cell.empty { color: #b9c9a6; cursor: default; }
+  .cell.rattad::after { content: "•"; color: #e2622c; font-size: 11px; vertical-align: super; }
+  .summa { font-weight: 700; white-space: nowrap; }
+  .notiser { color: #4e6b32; font-weight: 500; }
+  .tom { padding: 30px; text-align: center; color: #4e6b32; }
+</style></head>
+<body>
+  <h1>Mrs Raccoon 🦝</h1>
+  <p class="info">En rad per dag. Klicka i en ruta för att rätta, en orange prick visar att du ändrat.
+     Punkt betyder att uppgiften inte stod på listan den dagen. Sista kolumnerna är klara uppgifter och antal notiser.</p>
+  <div class="wrap">
+  ${poster.length ? `<table><thead><tr><th class="dag">Dag</th>${rubriker}<th class="kol"><span>✅</span><small>Klart</small></th><th class="kol"><span>💌</span><small>Notiser</small></th></tr></thead><tbody>${rader}</tbody></table>` : '<div class="tom">Ingen historik än. Den fylls på när han öppnar appen.</div>'}
+  </div>
+<script>
+  const key = ${JSON.stringify(key || "")};
+  document.addEventListener("click", async (e) => {
+    const cell = e.target.closest(".cell");
+    if (!cell || cell.classList.contains("empty")) return;
+    const done = cell.dataset.done === "1" ? false : true;
+    cell.style.opacity = "0.4";
+    const res = await fetch("/panel/toggle" + (key ? "?key=" + encodeURIComponent(key) : ""), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: cell.dataset.date, id: cell.dataset.id, done })
+    });
+    cell.style.opacity = "1";
+    if (!res.ok) { alert("Kunde inte spara ändringen."); return; }
+    cell.dataset.done = done ? "1" : "0";
+    cell.textContent = done ? "✓" : "";
+    cell.classList.toggle("klar", done);
+    cell.classList.toggle("oklar", !done);
+    cell.classList.add("rattad");
+  });
+</script>
+</body></html>`;
+}
+
 /* --------------------------- routes --------------------------- */
 
 async function handleRequest(request, env, url) {
@@ -366,39 +523,30 @@ async function handleRequest(request, env, url) {
   if (path === "/sync" && request.method === "POST") {
     const body = await request.json();
     const { dateStr } = stockholmParts(new Date());
+    const tasks = Array.isArray(body.tasks) ? body.tasks : [];
     const state = {
       dateStr,
       updatedAt: new Date().toISOString(),
-      boringDone: !!body.boringDone,
-      treatDone: !!body.treatDone,
-      wifeDone: !!body.wifeDone,
-      thinkDone: !!body.thinkDone,
-      laundrySortDone: !!body.laundrySortDone,
-      laundryRunDone: !!body.laundryRunDone,
-      vacuumDone: !!body.vacuumDone,
-      gardenDone: !!body.gardenDone,
-      tidyDone: !!body.tidyDone,
-      cleanDone: !!body.cleanDone,
-      runDone: !!body.runDone,
-      runDueToday: !!body.runDueToday,
       allDoneToday: !!body.allDoneToday,
-      streak: Number(body.streak) || 0
+      streak: Number(body.streak) || 0,
+      hearts: Number(body.hearts) || 0,
+      tasks
     };
     await env.PUSH_KV.put(STATE_KEY, JSON.stringify(state));
+
+    // Rättningar i panelen ska inte skrivas över av en senare synk från
+    // telefonen, så de bockarna vinner när de finns.
+    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
+    const tidigare = raw ? JSON.parse(raw) : {};
+    const rattat = tidigare.corrected || {};
+    const sammanslagna = tasks.map((t) => (t.id in rattat ? { ...t, done: rattat[t.id] } : t));
+
     await mergeHistory(env, dateStr, {
-      boringDone: state.boringDone,
-      treatDone: state.treatDone,
-      wifeDone: state.wifeDone,
-      thinkDone: state.thinkDone,
-      laundrySortDone: state.laundrySortDone,
-      laundryRunDone: state.laundryRunDone,
-      vacuumDone: state.vacuumDone,
-      gardenDone: state.gardenDone,
-      tidyDone: state.tidyDone,
-      cleanDone: state.cleanDone,
-      runDone: state.runDone,
-      runDueToday: state.runDueToday,
-      allDoneToday: state.allDoneToday
+      tasks: sammanslagna,
+      streak: state.streak,
+      hearts: state.hearts,
+      allDoneToday: sammanslagna.every((t) => t.done),
+      updatedAt: state.updatedAt
     });
     return json({ ok: true });
   }
@@ -413,6 +561,33 @@ async function handleRequest(request, env, url) {
   // Appen hämtar samma meddelanden som pushas, för pratbubblan i appen.
   if (path === "/messages" && request.method === "GET") {
     return json({ love: LOVE, pep: PEP, bus: BUS, fanigt: FANIGT });
+  }
+
+  if (path === "/panel" && request.method === "GET") {
+    if (!panelAuthorized(url, env)) return text("Fel nyckel.", 403);
+    const poster = await readHistory(env);
+    return new Response(panelHtml(poster, url.searchParams.get("key")), {
+      headers: { ...CORS_HEADERS, "Content-Type": "text/html; charset=utf-8" }
+    });
+  }
+
+  if (path === "/panel/toggle" && request.method === "POST") {
+    if (!panelAuthorized(url, env)) return json({ error: "fel nyckel" }, 403);
+    const body = await request.json();
+    if (!body.date || !body.id) return json({ error: "date och id krävs" }, 400);
+
+    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + body.date);
+    if (!raw) return json({ error: "ingen dag att rätta" }, 404);
+    const post = JSON.parse(raw);
+    const tasks = (post.tasks || []).map((t) => (t.id === body.id ? { ...t, done: !!body.done } : t));
+    const corrected = { ...(post.corrected || {}), [body.id]: !!body.done };
+
+    await mergeHistory(env, body.date, {
+      tasks,
+      corrected,
+      allDoneToday: tasks.length > 0 && tasks.every((t) => t.done)
+    });
+    return json({ ok: true });
   }
 
   if (path === "/admin/status" && request.method === "GET") {

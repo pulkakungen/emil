@@ -87,10 +87,26 @@ högst upp i `app.js`:
 Vill du byta ut en pose lägger du in en ny bild i `raccoons/` och skriver
 in filnamnet (utan ändelse) i rätt lista.
 
+## Panelvyn
+
+`/panel` visar de senaste 60 dagarna, en rad per dag och en kolumn per
+uppgift. Klicka i en ruta för att rätta en bock, rättningen markeras med
+en orange prick och skrivs inte över när telefonen synkar igen.
+
+Vill du skydda sidan med en nyckel:
+
+```bash
+npx wrangler secret put PANEL_KEY
+```
+
+Sedan öppnar du `/panel?key=DIN_NYCKEL`. Utan den hemligheten är sidan
+öppen för den som kan adressen.
+
 ## Adresser i workern
 
 | Adress | Vad den gör |
 | --- | --- |
+| `/panel` | Panelvy: en rad per dag, klicka i en ruta för att rätta |
 | `/admin/status` | Visar om notiser är påslagna och dagens lottade tider |
 | `/admin/send-test` | Skickar en testnotis direkt |
 | `/admin/send?text=Hej` | Skickar ett eget meddelande på direkten |
