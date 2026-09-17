@@ -160,7 +160,8 @@ function defaultState() {
     prevDue: {},
     streak: 0,
     lastAllDoneDate: null,
-    hearts: 0
+    hearts: 0,
+    petted: false
   };
 }
 
@@ -491,6 +492,7 @@ function init() {
   loadState();
   render();
   setPose(allDoneToday() ? "cheer" : idleMood());
+  if (state.petted) document.getElementById("pet-hint").hidden = true;
   say(pick(messagePool));
 
   document.getElementById("task-list").addEventListener("click", (e) => {
@@ -500,6 +502,10 @@ function init() {
 
   const raccoon = document.getElementById("raccoon-wrap");
   raccoon.addEventListener("click", () => {
+    // tipset behövs bara tills han klappat henne en gång
+    const hint = document.getElementById("pet-hint");
+    if (hint) hint.hidden = true;
+    state.petted = true;
     state.hearts += 1;
     saveState();
     document.getElementById("hearts-count").textContent = state.hearts;
@@ -512,6 +518,11 @@ function init() {
       clearTimeout(poseTimer);
       poseTimer = setTimeout(() => setPose(idleMood()), 3000);
     }
+  });
+
+  document.getElementById("hearts-chip").addEventListener("click", () => {
+    showToast("Hjärtan är kärlek du fått av mig 💖");
+    say("Hjärtan får du av mig, inte tvärtom. Ett för varje klapp, fem för varje uppgift och tjugo när hela dagen är klar. Du behöver inte ge mig något alls, älskling. 🦝");
   });
 
   document.getElementById("notif-btn").addEventListener("click", async () => {

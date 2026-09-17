@@ -162,6 +162,27 @@ html, body {
   backdrop-filter: blur(6px);
 }
 
+.pet-hint {
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  animation: puff 2.4s ease-in-out infinite;
+}
+
+.pet-hint[hidden] { display: none; }
+
+@keyframes puff {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.chip-btn {
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
 /* ------------------------- märkesdagar ------------------------- */
 
 .special-banner {
