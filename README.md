@@ -61,15 +61,10 @@ npx wrangler secret put VAPID_SUBJECT      # t.ex. mailto:din@epost.se
 npm run deploy
 ```
 
-Wrangler skriver ut workerns adress. Klistra in den, och den publika
-VAPID-nyckeln, högst upp i `app.js`:
-
-```js
-const PUSH_WORKER_URL = "https://mrs-raccoon-push.ditt-konto.workers.dev";
-const VAPID_PUBLIC_KEY = "B...";
-```
-
-Pusha sedan om, så bygger GitHub Pages om appen automatiskt.
+Wrangler skriver ut workerns adress. Den står redan i `app.js` som
+`PUSH_WORKER_URL`, byt bara om du deployar under ett annat namn. Den
+publika VAPID-nyckeln behöver du inte klistra in någonstans, appen hämtar
+den från workern via `/vapid`.
 
 ## Installera på telefonen
 

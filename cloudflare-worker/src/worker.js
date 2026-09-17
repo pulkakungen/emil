@@ -403,6 +403,13 @@ async function handleRequest(request, env, url) {
     return json({ ok: true });
   }
 
+  // Appen hämtar den publika VAPID-nyckeln härifrån i stället för att ha
+  // den inskriven i koden, så den aldrig kan hamna i otakt med workern.
+  // Publika nyckeln är just publik, den är ofarlig att lämna ut.
+  if (path === "/vapid" && request.method === "GET") {
+    return json({ publicKey: env.VAPID_PUBLIC_KEY || null });
+  }
+
   // Appen hämtar samma meddelanden som pushas, för pratbubblan i appen.
   if (path === "/messages" && request.method === "GET") {
     return json({ love: LOVE, pep: PEP, bus: BUS, fanigt: FANIGT });

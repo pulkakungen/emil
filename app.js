@@ -12,11 +12,16 @@
 const STORAGE_KEY = "mrs_raccoon_state_v1";
 const MESSAGE_CACHE_KEY = "mrs_raccoon_messages_v1";
 
-// Fyll i efter att du deployat workern första gången (se README).
-// Adressen skrivs ut av wrangler, t.ex. https://mrs-raccoon-push.ditt-konto.workers.dev
-const PUSH_WORKER_URL = "FYLL_I_WORKER_ADRESSEN";
-// Publika VAPID-nyckeln från `npm run vapid` i mappen cloudflare-worker.
-const VAPID_PUBLIC_KEY = "FYLL_I_PUBLIKA_VAPID_NYCKELN";
+const PUSH_WORKER_URL = "https://mrs-raccoon-push.bella-sassibrass.workers.dev";
+
+// Publika VAPID-nyckeln hämtas från workern, så den aldrig kan hamna i
+// otakt med nyckeln som ligger som hemlighet där.
+async function getVapidKey() {
+  const res = await fetch(PUSH_WORKER_URL + "/vapid");
+  const data = await res.json();
+  if (!data.publicKey) throw new Error("workern saknar VAPID_PUBLIC_KEY");
+  return data.publicKey;
+}
 
 const TASKS = [
   { id: "trakigt", emoji: "😤", text: "Gör något tråkigt som du inte vill göra", hint: "Tio minuter räcker. Fult och snabbt slår perfekt och aldrig." },
@@ -369,10 +374,18 @@ async function enablePush() {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return false;
 
+  let vapidKey;
+  try {
+    vapidKey = await getVapidKey();
+  } catch (e) {
+    alert("Kunde inte hämta nyckeln från servern. Försök igen om en stund.");
+    return false;
+  }
+
   const reg = await navigator.serviceWorker.ready;
   const subscription = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    applicationServerKey: urlBase64ToUint8Array(vapidKey)
   });
 
   await fetch(PUSH_WORKER_URL + "/subscribe", {
