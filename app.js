@@ -492,7 +492,8 @@ function init() {
   loadState();
   render();
   setPose(allDoneToday() ? "cheer" : idleMood());
-  if (state.petted) document.getElementById("pet-hint").hidden = true;
+  const hintEl = document.getElementById("pet-hint");
+  if (hintEl && state.petted) hintEl.hidden = true;
   say(pick(messagePool));
 
   document.getElementById("task-list").addEventListener("click", (e) => {
@@ -520,7 +521,8 @@ function init() {
     }
   });
 
-  document.getElementById("hearts-chip").addEventListener("click", () => {
+  const heartsChip = document.getElementById("hearts-chip");
+  if (heartsChip) heartsChip.addEventListener("click", () => {
     showToast("Hjärtan är kärlek du fått av mig 💖");
     say("Hjärtan får du av mig, inte tvärtom. Ett för varje klapp, fem för varje uppgift och tjugo när hela dagen är klar. Du behöver inte ge mig något alls, älskling. 🦝");
   });

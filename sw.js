@@ -1,4 +1,4 @@
-const CACHE_NAME = "mrs-raccoon-v1";
+const CACHE_NAME = "mrs-raccoon-v2";
 const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./raccoons/idle-upright.png"];
 
 self.addEventListener("install", (event) => {
@@ -13,11 +13,21 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Nätverk först så nya versioner alltid når telefonen direkt, cachen är bara offline-reserv.
+// Nätverk först så nya versioner alltid når telefonen direkt, cachen är bara
+// offline-reserv. Koden och sidan hämtas med "reload", annars kan webbläsarens
+// egen cache servera en gammal app.js i upp till tio minuter efter en ny
+// version, och då kan en ny sida och gammal kod krocka.
+function alltidFarsk(request) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return request;
+  if (request.mode === "navigate") return new Request(request, { cache: "reload" });
+  return /\.(html|js|css|json)$/.test(url.pathname) ? new Request(request, { cache: "reload" }) : request;
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(event.request)
+    fetch(alltidFarsk(event.request))
       .then((response) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
