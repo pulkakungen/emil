@@ -434,6 +434,32 @@ async function runSchedule(env) {
 }
 
 
+// En äldre version av appen skickade namngivna flaggor i stället för en
+// lista. Telefoner kan ha den kvar i cachen ett tag, så vi översätter.
+//
+// Tvätt- och dammsugningsflaggorna i den versionen sattes till "klar" även
+// de dagar uppgiften inte stod på listan, för att slippa knuffar om dem.
+// De går alltså inte att lita på och tas inte med här, annars hamnar bockar
+// i historiken som han aldrig satt.
+const LEGACY_FLAGS = [
+  ["boringDone", "trakigt", "😤", "Gör något tråkigt som du inte vill göra"],
+  ["treatDone", "gott", "🍫", "Unna dig något gott"],
+  ["wifeDone", "fru", "💌", "Skicka ett gulligt meddelande till din fru"],
+  ["thinkDone", "tankfru", "💭", "Tänk på din fru!"],
+  ["tidyDone", "nedanvaning", "🧹", "Plocka undan 10 saker från nedanvåningen"],
+  ["cleanDone", "stada", "🧼", "Städa nåt!"],
+  ["gardenDone", "tradgard", "🌿", "Ta en runda i trädgården"],
+  ["runDone", "spring", "👟", "Spring en runda"]
+];
+
+function tasksFromLegacyFlags(body) {
+  const any = LEGACY_FLAGS.some(([flagg]) => flagg in body);
+  if (!any) return [];
+  return LEGACY_FLAGS
+    .filter(([, id]) => (id === "spring" ? !!body.runDueToday : true))
+    .map(([flagg, id, emoji, text]) => ({ id, emoji, text, done: !!body[flagg] }));
+}
+
 /* --------------------------- panelvy ---------------------------
 
    En enkel sida för Bella: en rad per dag, en kolumn per uppgift.
@@ -590,7 +616,7 @@ async function handleRequest(request, env, url) {
   if (path === "/sync" && request.method === "POST") {
     const body = await request.json();
     const { dateStr } = stockholmParts(new Date());
-    const tasks = Array.isArray(body.tasks) ? body.tasks : [];
+    const tasks = Array.isArray(body.tasks) ? body.tasks : tasksFromLegacyFlags(body);
     const state = {
       dateStr,
       updatedAt: new Date().toISOString(),
@@ -616,6 +642,15 @@ async function handleRequest(request, env, url) {
       updatedAt: state.updatedAt
     });
     return json({ ok: true });
+  }
+
+  // Dagens sparade läge, så appen kan hämta tillbaka bockar som telefonen
+  // tappat (ny installation, rensad webbläsare, byte av enhet).
+  if (path === "/state" && request.method === "GET") {
+    const { dateStr } = stockholmParts(new Date());
+    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
+    const post = raw ? JSON.parse(raw) : null;
+    return json({ dateStr, tasks: post && Array.isArray(post.tasks) ? post.tasks : [] });
   }
 
   // Appen hämtar den publika VAPID-nyckeln härifrån i stället för att ha

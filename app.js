@@ -438,6 +438,28 @@ function syncToWorker() {
   }).catch(() => {});
 }
 
+// Servern är reserven: har telefonen tappat dagens bockar (ny installation,
+// rensad webbläsare, annan webbläsare) hämtas de tillbaka hit. Bara när det
+// lokala är tomt, så en avbockning han just ångrat aldrig kommer tillbaka.
+async function restoreFromWorker() {
+  if (Object.keys(state.done).length > 0) return;
+  try {
+    const res = await fetch(PUSH_WORKER_URL + "/state");
+    const data = await res.json();
+    if (data.dateStr !== state.dateStr) return;
+    const klara = (data.tasks || []).filter((t) => t.done);
+    if (!klara.length) return;
+    klara.forEach((t) => {
+      state.done[t.id] = true;
+    });
+    saveState();
+    render();
+    showToast("Hämtade tillbaka dagens bockar 🦝");
+  } catch (e) {
+    /* offline eller ingen server, appen fungerar ändå */
+  }
+}
+
 /* --------------------- meddelanden till bubblan --------------------- */
 
 async function loadMessages() {
@@ -526,7 +548,7 @@ function init() {
   }
 
   loadMessages().then(() => say(pick(messagePool)));
-  syncToWorker();
+  restoreFromWorker().then(syncToWorker);
 }
 
 document.addEventListener("DOMContentLoaded", init);
