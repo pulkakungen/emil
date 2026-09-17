@@ -30,7 +30,7 @@ const TASKS = [
   { id: "tankfru", emoji: "💭", text: "Tänk på din fru!", hint: "Tio sekunder. Minns något du gillar med henne, bara för dig själv." },
   { id: "tvatt-sortera", emoji: "🧺", text: "Sortera och lägg in en tvätt", hint: "Vitt för sig, kulört för sig. Maskinen är laddad och redo." },
   { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Tryck på knappen. Tvättbjörnen är personligt engagerad i den här." },
-  { id: "dammsug", emoji: "🔌", text: "Dammsug ett rum", hint: "Ett rum räcker. Välj det som stör dig mest." },
+  { id: "dammsug", emoji: "🔌", text: "Dammsug 2 rum", hint: "En gång i veckan. Välj de rum som stör dig mest.", everyDays: 7 },
   { id: "nedanvaning", emoji: "🧹", text: "Plocka undan på nedanvåningen", hint: "En runda med korgen. Allt som ligger fel åker med." },
   { id: "stada", emoji: "🧼", text: "Städa nåt!", hint: "Vad som helst. En yta, ett skåp, en hylla. Du väljer." },
   { id: "tradgard", emoji: "🌿", text: "Ta en runda i trädgården", hint: "Bara gå ut och titta. Räknas även om du inte gör något." },
@@ -96,8 +96,9 @@ function idleMood() {
   if (nightTime()) return "sleep";
   const runTask = TASKS.find((t) => t.everyDays);
   if (runTask && isTaskActive(runTask) && !state.done[runTask.id] && Math.random() < 0.5) return "run";
-  const choresLeft = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada"]
-    .some((id) => !state.done[id]);
+  const choreIds = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada"];
+  const choresLeft = TASKS.filter((t) => choreIds.includes(t.id))
+    .some((t) => isTaskActive(t) && !state.done[t.id]);
   if (choresLeft && new Date().getHours() >= 17 && Math.random() < 0.4) return "work";
   return "idle";
 }
@@ -206,6 +207,12 @@ function isTaskActive(task) {
   return daysBetween(due, state.dateStr) >= 0; // förfallen eller exakt idag
 }
 
+// Sant om uppgiften står på dagens lista (rullande uppgifter bara när de förfallit).
+function isTaskDueToday(id) {
+  const task = TASKS.find((t) => t.id === id);
+  return !!task && isTaskActive(task);
+}
+
 function activeTasks() {
   return TASKS.filter(isTaskActive);
 }
@@ -301,23 +308,18 @@ function render() {
   renderSpecialBanner();
 }
 
-// Visar när nästa löprunda är inbokad, så det aldrig känns oklart.
+// Visar när de rullande uppgifterna är inbokade nästa gång.
 function renderRunInfo() {
-  const runTask = TASKS.find((t) => t.everyDays);
   const box = document.getElementById("run-info");
-  if (!runTask) {
-    box.textContent = "";
-    return;
-  }
-  const due = state.due[runTask.id] || state.dateStr;
-  const diff = daysBetween(state.dateStr, due);
-  if (diff <= 0) {
-    box.textContent = "👟 Löprundan är aktuell idag.";
-  } else if (diff === 1) {
-    box.textContent = "👟 Nästa löprunda: imorgon.";
-  } else {
-    box.textContent = `👟 Nästa löprunda: om ${diff} dagar (${due}).`;
-  }
+  const rows = TASKS.filter((t) => t.everyDays).map((task) => {
+    const due = state.due[task.id] || state.dateStr;
+    const diff = daysBetween(state.dateStr, due);
+    const namn = task.text.toLowerCase();
+    if (diff <= 0) return `${task.emoji} ${task.text} är aktuellt idag.`;
+    if (diff === 1) return `${task.emoji} Nästa gång för ${namn}: imorgon.`;
+    return `${task.emoji} Nästa gång för ${namn}: om ${diff} dagar (${due}).`;
+  });
+  box.innerHTML = rows.map((r) => `<div>${r}</div>`).join("");
 }
 
 function showToast(message) {
@@ -423,7 +425,7 @@ function syncToWorker() {
       thinkDone: !!state.done.tankfru,
       laundrySortDone: !!state.done["tvatt-sortera"],
       laundryRunDone: !!state.done["tvatt-kor"],
-      vacuumDone: !!state.done.dammsug,
+      vacuumDone: !isTaskDueToday("dammsug") || !!state.done.dammsug,
       gardenDone: !!state.done.tradgard,
       tidyDone: !!state.done.nedanvaning,
       cleanDone: !!state.done.stada,

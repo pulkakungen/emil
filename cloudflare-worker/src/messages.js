@@ -136,11 +136,11 @@ export const TASK_TVATT = [
 ];
 
 export const TASK_DAMMSUG = [
-  "Dammsug ett rum, älskling. Bara ett. 🔌",
-  "Äcklis, ta det rum som stör dig mest och kör dammsugaren där. 🧹",
-  "Gullis, tio minuter med dammsugaren och rummet känns nytt. ✨",
+  "Dags att dammsuga, älskling. Två rum, sen är det gjort för veckan. 🔌",
+  "Äcklis, ta de två rum som stör dig mest och kör dammsugaren där. 🧹",
+  "Gullis, tjugo minuter med dammsugaren och hela våningen känns ny. ✨",
   "Snutt, dammråttorna har flyttat in igen. Visa dem vem som bor här. 🐭",
-  "Herr tacos, ett rum dammsugit är ett rum du kan vara stolt över. 🌟"
+  "Herr tacos, veckans dammsugning väntar. Två rum, inte mer. 🌟"
 ];
 
 export const TASK_NEDANVANING = [
