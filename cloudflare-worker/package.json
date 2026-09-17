@@ -6,7 +6,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "vapid": "node generate-vapid.mjs",
-    "keys": "node set-keys.mjs"
+    "keys": "node set-keys.mjs",
+    "sheet": "node set-sheet.mjs"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"
