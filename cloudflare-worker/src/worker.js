@@ -91,7 +91,7 @@ function denied() {
 
 // Normaliserad lägesbild för föräldrapanelen, samma form som de andra
 // apparna lämnar, så panelen slipper veta hur den här är byggd inuti.
-async function buildSummary(env) {
+async function buildSummary(env, url) {
   const now = new Date();
   const { dateStr } = stockholmParts(now);
   const subRaw = await env.PUSH_KV.get(SUB_KEY);
@@ -100,11 +100,16 @@ async function buildSummary(env) {
   const scheduleRaw = await env.PUSH_KV.get(SCHEDULE_PREFIX + dateStr);
   const slots = scheduleRaw ? JSON.parse(scheduleRaw) : [];
 
-  const tasks = (state && state.dateStr === dateStr ? state.tasks || [] : []).map((t) => ({
-    id: t.id,
-    text: t.text || t.id,
-    done: !!t.done
-  }));
+  // Dagens lista läses ur dagsposten, inte ur den senaste rapporten: posten
+  // är den som skyddas mot tomma rapporter och innehåller dina rättningar.
+  const dagRaw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
+  const dag = dagRaw ? JSON.parse(dagRaw) : null;
+  const lista = dag && Array.isArray(dag.tasks) && dag.tasks.length
+    ? dag.tasks
+    : state && state.dateStr === dateStr
+      ? state.tasks || []
+      : [];
+  const tasks = lista.map((t) => ({ id: t.id, text: t.text || t.id, done: !!t.done }));
 
   const history = [];
   for (let i = 13; i >= 0; i--) {
@@ -121,16 +126,27 @@ async function buildSummary(env) {
     });
   }
 
+  // Länkar så att föräldrapanelen kan lägga en knapp rakt in i dagsvyn.
+  // Nyckeln följer med om anroparen använde en, annars behövs ingen.
+  const key = url ? url.searchParams.get("key") : null;
+  const lank = (path) => (url ? url.origin + path + (key ? "?key=" + encodeURIComponent(key) : "") : null);
+
   return {
     app: "mrs-raccoon",
     title: "Mrs Raccoon",
     child: "Emil",
+    panelUrl: lank("/panel"),
+    links: [
+      { label: "Panel", url: lank("/panel") },
+      { label: "Status", url: lank("/admin/status") },
+      { label: "Skicka hälsning", url: lank("/admin/send") }
+    ],
     now: now.toISOString(),
     dateStr,
     notifications: !!subRaw,
     lastSyncAt: state ? state.updatedAt : null,
     lastNagAt: null,
-    allDoneToday: !!(state && state.allDoneToday),
+    allDoneToday: tasks.length > 0 && tasks.every((t) => t.done),
     hunger: null,
     happiness: null,
     level: null,
@@ -632,7 +648,21 @@ async function handleRequest(request, env, url) {
     const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
     const tidigare = raw ? JSON.parse(raw) : {};
     const rattat = tidigare.corrected || {};
-    const sammanslagna = tasks.map((t) => (t.id in rattat ? { ...t, done: rattat[t.id] } : t));
+    let sammanslagna = tasks.map((t) => (t.id in rattat ? { ...t, done: rattat[t.id] } : t));
+
+    // En helt tom rapport betyder nästan alltid en app som just startat på
+    // en ny enhet eller en rensad webbläsare, inte att han ångrat allt han
+    // gjort. Dagens bockar får därför stå kvar i så fall. Vill du ändå nolla
+    // en dag gör du det i panelen.
+    const tidigareKlara = (tidigare.tasks || []).filter((t) => t.done);
+    if (!sammanslagna.some((t) => t.done) && tidigareKlara.length) {
+      const klaraId = new Set(tidigareKlara.map((t) => t.id));
+      sammanslagna = sammanslagna.map((t) => (klaraId.has(t.id) ? { ...t, done: true } : t));
+      // uppgifter som den nya enheten inte känner till får inte tappas bort
+      for (const t of tidigareKlara) {
+        if (!sammanslagna.some((n) => n.id === t.id)) sammanslagna.push(t);
+      }
+    }
 
     await mergeHistory(env, dateStr, {
       tasks: sammanslagna,
@@ -695,7 +725,7 @@ async function handleRequest(request, env, url) {
   if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
 
   if (path === "/admin/summary" && request.method === "GET") {
-    return json(await buildSummary(env));
+    return json(await buildSummary(env, url));
   }
 
   if (path === "/admin/status" && request.method === "GET") {
