@@ -8,6 +8,7 @@
 
 import { buildPushPayload } from "@block65/webcrypto-web-push";
 import { handlePanelRequest, mergeSyncedTasks } from "./panel.js";
+import { maybeSendDailySheet } from "./sheets.js";
 import {
   RANDOM_POOL,
   TASK_TRAKIGT,
@@ -418,6 +419,17 @@ async function mergeHistory(env, dateStr, patch) {
 async function runSchedule(env) {
   const now = new Date();
   const { dateStr, minutesOfDay, weekday } = stockholmParts(now);
+
+  // dagens rad till kalkylarket, strax före midnatt
+  const stateForSheet = await env.PUSH_KV.get(STATE_KEY);
+  await maybeSendDailySheet(env, {
+    app: "mrs-raccoon",
+    title: "Mrs Raccoon",
+    dateStr,
+    minutesOfDay,
+    historyPrefix: HISTORY_PREFIX,
+    streak: stateForSheet ? JSON.parse(stateForSheet).streak ?? null : null
+  });
 
   // Tyst natt. Ingenting lottas eller skickas utanför fönstret.
   if (minutesOfDay < WINDOW_START_MIN || minutesOfDay >= WINDOW_END_MIN) return;

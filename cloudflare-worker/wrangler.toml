@@ -11,9 +11,14 @@ kv_namespaces = [
 # Kör var 15:e minut dygnet runt. Workern filtrerar själv på svensk tid
 # och skickar aldrig något mellan 23.45 och 06.15.
 [triggers]
-crons = ["*/15 * * * *"]
+# Var 15:e minut för notiserna, plus 21.58 och 22.58 UTC så att en av dem
+# alltid är 23.58 svensk tid, då dagens rad skrivs till kalkylarket.
+crons = ["*/15 * * * *", "58 21,22 * * *"]
 
 # Hemligheter (sätts med `npx wrangler secret put <NAMN>`, skrivs ALDRIG här):
 #   VAPID_PRIVATE_KEY
 #   VAPID_PUBLIC_KEY
 #   VAPID_SUBJECT   (t.ex. "mailto:din@epost.se")
+#   ADMIN_TOKEN     (skyddar /admin och /panel)
+#   SHEET_URL       (Apps Script-webbappen, valfri)
+#   SHEET_TOKEN     (samma ord som TOKEN i skriptet, valfri)
