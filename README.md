@@ -93,20 +93,21 @@ in filnamnet (utan ändelse) i rätt lista.
 uppgift. Klicka i en ruta för att rätta en bock, rättningen markeras med
 en orange prick och skrivs inte över när telefonen synkar igen.
 
-Vill du skydda sidan med en nyckel:
+Panelen och allt under `/admin` skyddas av samma nyckel:
 
 ```bash
-npx wrangler secret put PANEL_KEY
+npx wrangler secret put ADMIN_TOKEN
 ```
 
-Sedan öppnar du `/panel?key=DIN_NYCKEL`. Utan den hemligheten är sidan
-öppen för den som kan adressen.
+Sedan öppnar du `/panel?key=DIN_NYCKEL`. Utan den hemligheten är sidorna
+öppna för den som kan adressen.
 
 ## Adresser i workern
 
 | Adress | Vad den gör |
 | --- | --- |
 | `/panel` | Panelvy: en rad per dag, klicka i en ruta för att rätta |
+| `/admin/summary` | Lägesbild i JSON, som föräldrapanelen läser |
 | `/admin/status` | Visar om notiser är påslagna och dagens lottade tider |
 | `/admin/send-test` | Skickar en testnotis direkt |
 | `/admin/send?text=Hej` | Skickar ett eget meddelande på direkten |

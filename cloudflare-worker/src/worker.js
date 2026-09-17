@@ -30,7 +30,7 @@ import {
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type"
+  "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key"
 };
 
 const APP_TITLE = "Mrs Raccoon 🦝";
@@ -71,6 +71,78 @@ function homeTaskAllowed(minutesOfDay, weekday) {
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Allt under /admin kräver nyckeln som sätts med
+// `wrangler secret put ADMIN_TOKEN`. Appens egna anrop (/subscribe, /sync,
+// /vapid, /messages) är fortsatt öppna, de bär ingen hemlighet.
+function adminKeyOk(request, url, env) {
+  if (!env.ADMIN_TOKEN) return true; // ingen nyckel satt än, lås inte ute någon
+  const given = request.headers.get("X-Admin-Key") || url.searchParams.get("key") || "";
+  return given === env.ADMIN_TOKEN;
+}
+
+function denied() {
+  return new Response("Fel eller saknad nyckel. Lägg till ?key=... i adressen.", {
+    status: 401,
+    headers: { ...CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8" }
+  });
+}
+
+// Normaliserad lägesbild för föräldrapanelen, samma form som de andra
+// apparna lämnar, så panelen slipper veta hur den här är byggd inuti.
+async function buildSummary(env) {
+  const now = new Date();
+  const { dateStr } = stockholmParts(now);
+  const subRaw = await env.PUSH_KV.get(SUB_KEY);
+  const stateRaw = await env.PUSH_KV.get(STATE_KEY);
+  const state = stateRaw ? JSON.parse(stateRaw) : null;
+  const scheduleRaw = await env.PUSH_KV.get(SCHEDULE_PREFIX + dateStr);
+  const slots = scheduleRaw ? JSON.parse(scheduleRaw) : [];
+
+  const tasks = (state && state.dateStr === dateStr ? state.tasks || [] : []).map((t) => ({
+    id: t.id,
+    text: t.text || t.id,
+    done: !!t.done
+  }));
+
+  const history = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 86400000);
+    const dag = stockholmParts(d).dateStr;
+    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dag);
+    const rec = raw ? JSON.parse(raw) : null;
+    const list = rec && Array.isArray(rec.tasks) ? rec.tasks : [];
+    history.push({
+      date: dag,
+      done: list.filter((t) => t.done).length,
+      total: list.length,
+      allDone: !!(rec && rec.allDoneToday)
+    });
+  }
+
+  return {
+    app: "mrs-raccoon",
+    title: "Mrs Raccoon",
+    child: "Emil",
+    now: now.toISOString(),
+    dateStr,
+    notifications: !!subRaw,
+    lastSyncAt: state ? state.updatedAt : null,
+    lastNagAt: null,
+    allDoneToday: !!(state && state.allDoneToday),
+    hunger: null,
+    happiness: null,
+    level: null,
+    streak: state && typeof state.streak === "number" ? state.streak : null,
+    petName: null,
+    doneToday: tasks.filter((t) => t.done).length,
+    totalToday: tasks.length,
+    tasks,
+    remindersSentToday: slots.filter((s) => s.sent).map((s) => s.message || "notis"),
+    affirmation: null,
+    history
+  };
 }
 
 function json(data, status = 200) {
@@ -366,8 +438,8 @@ async function runSchedule(env) {
 
    En enkel sida för Bella: en rad per dag, en kolumn per uppgift.
    Klicka i en ruta för att rätta, rättningen vinner över telefonen.
-   Skydda den med en nyckel om du vill:
-     npx wrangler secret put PANEL_KEY
+   Skyddas av samma nyckel som allt under /admin:
+     npx wrangler secret put ADMIN_TOKEN
    och lägg sedan till ?key=DIN_NYCKEL i adressen.
    --------------------------------------------------------------- */
 
@@ -386,11 +458,6 @@ const TASK_ORDER = [
   { id: "tradgard", emoji: "🌿", label: "Trädgårdsrunda" },
   { id: "spring", emoji: "👟", label: "Springa" }
 ];
-
-function panelAuthorized(url, env) {
-  if (!env.PANEL_KEY) return true;
-  return url.searchParams.get("key") === env.PANEL_KEY;
-}
 
 async function readHistory(env, dagar = 60) {
   const idag = stockholmParts(new Date()).dateStr;
@@ -564,7 +631,7 @@ async function handleRequest(request, env, url) {
   }
 
   if (path === "/panel" && request.method === "GET") {
-    if (!panelAuthorized(url, env)) return text("Fel nyckel.", 403);
+    if (!adminKeyOk(request, url, env)) return denied();
     const poster = await readHistory(env);
     return new Response(panelHtml(poster, url.searchParams.get("key")), {
       headers: { ...CORS_HEADERS, "Content-Type": "text/html; charset=utf-8" }
@@ -572,7 +639,7 @@ async function handleRequest(request, env, url) {
   }
 
   if (path === "/panel/toggle" && request.method === "POST") {
-    if (!panelAuthorized(url, env)) return json({ error: "fel nyckel" }, 403);
+    if (!adminKeyOk(request, url, env)) return json({ error: "fel nyckel" }, 401);
     const body = await request.json();
     if (!body.date || !body.id) return json({ error: "date och id krävs" }, 400);
 
@@ -588,6 +655,12 @@ async function handleRequest(request, env, url) {
       allDoneToday: tasks.length > 0 && tasks.every((t) => t.done)
     });
     return json({ ok: true });
+  }
+
+  if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
+
+  if (path === "/admin/summary" && request.method === "GET") {
+    return json(await buildSummary(env));
   }
 
   if (path === "/admin/status" && request.method === "GET") {
