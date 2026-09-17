@@ -7,6 +7,7 @@
    ========================================================= */
 
 import { buildPushPayload } from "@block65/webcrypto-web-push";
+import { handlePanelRequest, mergeSyncedTasks } from "./panel.js";
 import {
   RANDOM_POOL,
   TASK_TRAKIGT,
@@ -476,147 +477,6 @@ function tasksFromLegacyFlags(body) {
     .map(([flagg, id, emoji, text]) => ({ id, emoji, text, done: !!body[flagg] }));
 }
 
-/* --------------------------- panelvy ---------------------------
-
-   En enkel sida för Bella: en rad per dag, en kolumn per uppgift.
-   Klicka i en ruta för att rätta, rättningen vinner över telefonen.
-   Skyddas av samma nyckel som allt under /admin:
-     npx wrangler secret put ADMIN_TOKEN
-   och lägg sedan till ?key=DIN_NYCKEL i adressen.
-   --------------------------------------------------------------- */
-
-// Kolumnordningen speglar uppgifterna i appen. Uppgifter som dyker upp i
-// historiken men saknas här hamnar sist, så inget tappas bort.
-const TASK_ORDER = [
-  { id: "trakigt", emoji: "😤", label: "Tråkig grej" },
-  { id: "gott", emoji: "🍫", label: "Unna sig" },
-  { id: "fru", emoji: "💌", label: "Meddelande till frun" },
-  { id: "tankfru", emoji: "💭", label: "Tänka på frun" },
-  { id: "tvatt-sortera", emoji: "🧺", label: "Sortera tvätt" },
-  { id: "tvatt-kor", emoji: "🌀", label: "Köra maskin" },
-  { id: "dammsug", emoji: "🔌", label: "Dammsuga" },
-  { id: "nedanvaning", emoji: "🧹", label: "10 saker" },
-  { id: "stada", emoji: "🧼", label: "Städa nåt" },
-  { id: "tradgard", emoji: "🌿", label: "Trädgårdsrunda" },
-  { id: "spring", emoji: "👟", label: "Springa" }
-];
-
-async function readHistory(env, dagar = 60) {
-  const idag = stockholmParts(new Date()).dateStr;
-  const datum = [];
-  for (let i = 0; i < dagar; i++) {
-    const d = new Date(idag + "T12:00:00Z");
-    d.setUTCDate(d.getUTCDate() - i);
-    datum.push(d.toISOString().slice(0, 10));
-  }
-  const poster = [];
-  for (const dateStr of datum) {
-    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
-    if (raw) poster.push({ dateStr, ...JSON.parse(raw) });
-  }
-  return poster;
-}
-
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function panelHtml(poster, key) {
-  const veckodagar = ["sön", "mån", "tis", "ons", "tor", "fre", "lör"];
-
-  // extra uppgifter som finns i historiken men inte i den fasta ordningen
-  const kanda = new Set(TASK_ORDER.map((t) => t.id));
-  const extra = [];
-  for (const post of poster) {
-    for (const t of post.tasks || []) {
-      if (!kanda.has(t.id)) {
-        kanda.add(t.id);
-        extra.push({ id: t.id, emoji: t.emoji || "", label: t.text || t.id });
-      }
-    }
-  }
-  const kolumner = TASK_ORDER.concat(extra);
-
-  const rader = poster.map((post) => {
-    const karta = Object.fromEntries((post.tasks || []).map((t) => [t.id, t]));
-    const antalKlara = (post.tasks || []).filter((t) => t.done).length;
-    const antal = (post.tasks || []).length;
-    const weekday = veckodagar[new Date(post.dateStr + "T12:00:00Z").getUTCDay()];
-    const celler = kolumner.map((kol) => {
-      const t = karta[kol.id];
-      const rattad = post.corrected && kol.id in post.corrected ? " rattad" : "";
-      if (!t) {
-        return `<td class="cell saknas" data-date="${post.dateStr}" data-id="${kol.id}" data-done="0" title="Stod inte på listan den dagen. Klicka för att lägga till den som gjord.">·</td>`;
-      }
-      return `<td class="cell${t.done ? " klar" : " oklar"}${rattad}" data-date="${post.dateStr}" data-id="${kol.id}" data-done="${t.done ? 1 : 0}" title="Klicka för att rätta">${t.done ? "✓" : ""}</td>`;
-    }).join("");
-    const puffar = (post.pushes || []).length;
-    return `<tr><th class="dag"><span>${post.dateStr}</span><small>${weekday}</small></th>${celler}<td class="summa">${antalKlara}/${antal}</td><td class="summa notiser">${puffar}</td></tr>`;
-  }).join("");
-
-  const rubriker = kolumner.map((kol) => `<th class="kol"><span>${kol.emoji}</span><small>${escapeHtml(kol.label)}</small></th>`).join("");
-
-  return `<!DOCTYPE html>
-<html lang="sv"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mrs Raccoon · panel</title>
-<style>
-  :root { --gron: #85b84d; --morkgron: #20320f; --klar: #2f7d24; }
-  * { box-sizing: border-box; }
-  body { margin: 0; padding: 20px 16px 60px; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-         background: #f4f8ec; color: var(--morkgron); }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  p.info { margin: 0 0 18px; color: #4e6b32; font-size: 14px; }
-  .wrap { overflow-x: auto; border: 1px solid rgba(37,66,18,0.18); border-radius: 16px; background: #fff; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { border-bottom: 1px solid rgba(37,66,18,0.1); padding: 8px 6px; text-align: center; }
-  thead th { position: sticky; top: 0; background: var(--gron); color: #fff; font-size: 12px; }
-  .kol span { font-size: 16px; display: block; }
-  .kol small { font-weight: 600; display: block; max-width: 74px; line-height: 1.2; overflow-wrap: anywhere; }
-  th.dag { text-align: left; white-space: nowrap; background: #f4f8ec; position: sticky; left: 0; }
-  th.dag small { display: block; font-weight: 500; color: #4e6b32; }
-  .cell { cursor: pointer; font-weight: 800; min-width: 44px; user-select: none; }
-  .cell.klar { background: rgba(47,125,36,0.16); color: var(--klar); }
-  .cell.oklar:hover { background: rgba(47,125,36,0.07); }
-  .cell.saknas { color: #b9c9a6; }
-  .cell.saknas:hover { background: rgba(47,125,36,0.07); }
-  .cell.rattad::after { content: "•"; color: #e2622c; font-size: 11px; vertical-align: super; }
-  .summa { font-weight: 700; white-space: nowrap; }
-  .notiser { color: #4e6b32; font-weight: 500; }
-  .tom { padding: 30px; text-align: center; color: #4e6b32; }
-</style></head>
-<body>
-  <h1>Mrs Raccoon 🦝</h1>
-  <p class="info">En rad per dag. Klicka i en ruta för att rätta, en orange prick visar att du ändrat.
-     Punkt betyder att uppgiften inte stod på listan den dagen. Sista kolumnerna är klara uppgifter och antal notiser.</p>
-  <div class="wrap">
-  ${poster.length ? `<table><thead><tr><th class="dag">Dag</th>${rubriker}<th class="kol"><span>✅</span><small>Klart</small></th><th class="kol"><span>💌</span><small>Notiser</small></th></tr></thead><tbody>${rader}</tbody></table>` : '<div class="tom">Ingen historik än. Den fylls på när han öppnar appen.</div>'}
-  </div>
-<script>
-  const key = ${JSON.stringify(key || "")};
-  document.addEventListener("click", async (e) => {
-    const cell = e.target.closest(".cell");
-    if (!cell) return;
-    const done = cell.dataset.done === "1" ? false : true;
-    cell.style.opacity = "0.4";
-    const res = await fetch("/panel/toggle" + (key ? "?key=" + encodeURIComponent(key) : ""), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: cell.dataset.date, id: cell.dataset.id, done })
-    });
-    cell.style.opacity = "1";
-    if (!res.ok) { alert("Kunde inte spara ändringen."); return; }
-    cell.dataset.done = done ? "1" : "0";
-    cell.textContent = done ? "✓" : "";
-    cell.classList.remove("saknas");
-    cell.classList.toggle("klar", done);
-    cell.classList.toggle("oklar", !done);
-    cell.classList.add("rattad");
-  });
-</script>
-</body></html>`;
-}
-
 /* --------------------------- routes --------------------------- */
 
 async function handleRequest(request, env, url) {
@@ -647,26 +507,11 @@ async function handleRequest(request, env, url) {
     };
     await env.PUSH_KV.put(STATE_KEY, JSON.stringify(state));
 
-    // Rättningar i panelen ska inte skrivas över av en senare synk från
-    // telefonen, så de bockarna vinner när de finns.
+    // Rättningar i panelen vinner, och en tom rapport från en ny enhet får
+    // inte nolla en dag som redan har bockar.
     const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
     const tidigare = raw ? JSON.parse(raw) : {};
-    const rattat = tidigare.corrected || {};
-    let sammanslagna = tasks.map((t) => (t.id in rattat ? { ...t, done: rattat[t.id] } : t));
-
-    // En helt tom rapport betyder nästan alltid en app som just startat på
-    // en ny enhet eller en rensad webbläsare, inte att han ångrat allt han
-    // gjort. Dagens bockar får därför stå kvar i så fall. Vill du ändå nolla
-    // en dag gör du det i panelen.
-    const tidigareKlara = (tidigare.tasks || []).filter((t) => t.done);
-    if (!sammanslagna.some((t) => t.done) && tidigareKlara.length) {
-      const klaraId = new Set(tidigareKlara.map((t) => t.id));
-      sammanslagna = sammanslagna.map((t) => (klaraId.has(t.id) ? { ...t, done: true } : t));
-      // uppgifter som den nya enheten inte känner till får inte tappas bort
-      for (const t of tidigareKlara) {
-        if (!sammanslagna.some((n) => n.id === t.id)) sammanslagna.push(t);
-      }
-    }
+    const sammanslagna = mergeSyncedTasks(tidigare, tasks);
 
     await mergeHistory(env, dateStr, {
       tasks: sammanslagna,
@@ -699,38 +544,13 @@ async function handleRequest(request, env, url) {
     return json({ love: LOVE, pep: PEP, bus: BUS, fanigt: FANIGT });
   }
 
-  if (path === "/panel" && request.method === "GET") {
-    if (!adminKeyOk(request, url, env)) return denied();
-    const poster = await readHistory(env);
-    return new Response(panelHtml(poster, url.searchParams.get("key")), {
-      headers: { ...CORS_HEADERS, "Content-Type": "text/html; charset=utf-8" }
-    });
-  }
-
-  if (path === "/panel/toggle" && request.method === "POST") {
-    if (!adminKeyOk(request, url, env)) return json({ error: "fel nyckel" }, 401);
-    const body = await request.json();
-    if (!body.date || !body.id) return json({ error: "date och id krävs" }, 400);
-
-    const raw = await env.PUSH_KV.get(HISTORY_PREFIX + body.date);
-    const post = raw ? JSON.parse(raw) : {};
-    const befintliga = post.tasks || [];
-    const finns = befintliga.some((t) => t.id === body.id);
-    const mall = TASK_ORDER.find((k) => k.id === body.id);
-    const tasks = finns
-      ? befintliga.map((t) => (t.id === body.id ? { ...t, done: !!body.done } : t))
-      : befintliga.concat([
-          { id: body.id, emoji: mall ? mall.emoji : "", text: mall ? mall.label : body.id, done: !!body.done }
-        ]);
-    const corrected = { ...(post.corrected || {}), [body.id]: !!body.done };
-
-    await mergeHistory(env, body.date, {
-      tasks,
-      corrected,
-      allDoneToday: tasks.length > 0 && tasks.every((t) => t.done)
-    });
-    return json({ ok: true });
-  }
+  const panelRes = await handlePanelRequest(request, env, url, {
+    title: "Mrs Raccoon 🦝",
+    historyPrefix: HISTORY_PREFIX,
+    authorized: adminKeyOk,
+    corsHeaders: CORS_HEADERS
+  });
+  if (panelRes) return panelRes;
 
   if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
 
