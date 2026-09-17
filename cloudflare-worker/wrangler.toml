@@ -5,7 +5,7 @@ compatibility_date = "2026-01-01"
 # Skapa KV med:  npx wrangler kv namespace create PUSH_KV
 # Klistra in id:t som kommandot skriver ut här nedanför.
 kv_namespaces = [
-  { binding = "PUSH_KV", id = "KLISTRA_IN_DITT_KV_ID_HAR" }
+  { binding = "PUSH_KV", id = "263f010de8874eca812f1b00662342f5" }
 ]
 
 # Kör var 15:e minut dygnet runt. Workern filtrerar själv på svensk tid
