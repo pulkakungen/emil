@@ -1,5 +1,5 @@
 /* =========================================================
-   Tvättis – push-server (Cloudflare Worker)
+   Mrs Raccoon – push-server (Cloudflare Worker)
 
    Fristående worker med egen KV, egna VAPID-nycklar och egna
    meddelanden. Cron kör var 15:e minut, workern filtrerar själv på
@@ -32,7 +32,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type"
 };
 
-const APP_TITLE = "Tvättis 🦝";
+const APP_TITLE = "Mrs Raccoon 🦝";
 
 const SUB_KEY = "subscription";
 const STATE_KEY = "state";
@@ -368,7 +368,7 @@ async function handleRequest(request, env, url) {
     const slots = scheduleRaw ? JSON.parse(scheduleRaw) : [];
 
     const lines = [
-      "=== Tvättis push-status 🦝 ===",
+      "=== Mrs Raccoon push-status 🦝 ===",
       "",
       `Prenumeration finns: ${subRaw ? "JA ✅" : "NEJ ❌ (klockan 🔔 är inte påslagen på hans telefon)"}`,
       `Svensk lokaltid nu: ${hhmm(minutesOfDay)} (${dateStr})`,
@@ -407,7 +407,7 @@ async function handleRequest(request, env, url) {
   }
 
   if (path === "/" || path === "") {
-    return text("Tvättis push worker is running 🦝");
+    return text("Mrs Raccoon push worker is running 🦝");
   }
 
   return json({ error: "not found" }, 404);

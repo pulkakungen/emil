@@ -1,4 +1,4 @@
-const CACHE_NAME = "tvattis-v3";
+const CACHE_NAME = "mrs-raccoon-v1";
 const CORE_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.json", "./raccoons/idle-upright.png"];
 
 self.addEventListener("install", (event) => {
@@ -28,7 +28,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Tvättis 🦝", body: "Tänkte på dig! ❤️" };
+  let data = { title: "Mrs Raccoon 🦝", body: "Tänkte på dig! ❤️" };
   try {
     if (event.data) data = event.data.json();
   } catch (e) {
@@ -36,13 +36,13 @@ self.addEventListener("push", (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "Tvättis 🦝", {
+    self.registration.showNotification(data.title || "Mrs Raccoon 🦝", {
       body: data.body,
       icon: "icons/icon-192.png",
       badge: "icons/icon-192.png",
       vibrate: [80, 40, 80],
       // unik tag per notis, annars skriver en ny kärlekshälsning över den förra
-      tag: "tvattis-" + Date.now(),
+      tag: "mrs-raccoon-" + Date.now(),
       renotify: true,
       data: { url: "./index.html" }
     })

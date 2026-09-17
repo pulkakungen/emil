@@ -1,7 +1,7 @@
 "use strict";
 
 /* =========================================================
-   TVÄTTIS 🦝 – uppgifter, pepp och kärleksnotiser
+   MRS RACCOON 🦝 – uppgifter, pepp och kärleksnotiser
 
    Uppgifterna ligger i TASKS här nedanför. Lägg gärna till fler,
    det enda som krävs är ett unikt id, en emoji och en text.
@@ -9,11 +9,11 @@
    gången uppgiften bockades av.
    ========================================================= */
 
-const STORAGE_KEY = "tvattis_state_v1";
-const MESSAGE_CACHE_KEY = "tvattis_messages_v1";
+const STORAGE_KEY = "mrs_raccoon_state_v1";
+const MESSAGE_CACHE_KEY = "mrs_raccoon_messages_v1";
 
 // Fyll i efter att du deployat workern första gången (se README).
-// Adressen skrivs ut av wrangler, t.ex. https://tvattis-push.ditt-konto.workers.dev
+// Adressen skrivs ut av wrangler, t.ex. https://mrs-raccoon-push.ditt-konto.workers.dev
 const PUSH_WORKER_URL = "FYLL_I_WORKER_ADRESSEN";
 // Publika VAPID-nyckeln från `npm run vapid` i mappen cloudflare-worker.
 const VAPID_PUBLIC_KEY = "FYLL_I_PUBLIKA_VAPID_NYCKELN";

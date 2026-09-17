@@ -1,4 +1,4 @@
-# Tvättis 🦝
+# Mrs Raccoon 🦝
 
 Egen liten app till Emil: dagens uppgifter och kärleks- och peppnotiser
 som slumpas ut över dygnet. Helt fristående, ingen koppling till någon
@@ -65,7 +65,7 @@ Wrangler skriver ut workerns adress. Klistra in den, och den publika
 VAPID-nyckeln, högst upp i `app.js`:
 
 ```js
-const PUSH_WORKER_URL = "https://tvattis-push.ditt-konto.workers.dev";
+const PUSH_WORKER_URL = "https://mrs-raccoon-push.ditt-konto.workers.dev";
 const VAPID_PUBLIC_KEY = "B...";
 ```
 
