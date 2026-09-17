@@ -544,8 +544,10 @@ function panelHtml(poster, key) {
     const weekday = veckodagar[new Date(post.dateStr + "T12:00:00Z").getUTCDay()];
     const celler = kolumner.map((kol) => {
       const t = karta[kol.id];
-      if (!t) return '<td class="cell empty" title="stod inte på listan den dagen">·</td>';
       const rattad = post.corrected && kol.id in post.corrected ? " rattad" : "";
+      if (!t) {
+        return `<td class="cell saknas" data-date="${post.dateStr}" data-id="${kol.id}" data-done="0" title="Stod inte på listan den dagen. Klicka för att lägga till den som gjord.">·</td>`;
+      }
       return `<td class="cell${t.done ? " klar" : " oklar"}${rattad}" data-date="${post.dateStr}" data-id="${kol.id}" data-done="${t.done ? 1 : 0}" title="Klicka för att rätta">${t.done ? "✓" : ""}</td>`;
     }).join("");
     const puffar = (post.pushes || []).length;
@@ -576,7 +578,8 @@ function panelHtml(poster, key) {
   .cell { cursor: pointer; font-weight: 800; min-width: 44px; user-select: none; }
   .cell.klar { background: rgba(47,125,36,0.16); color: var(--klar); }
   .cell.oklar:hover { background: rgba(47,125,36,0.07); }
-  .cell.empty { color: #b9c9a6; cursor: default; }
+  .cell.saknas { color: #b9c9a6; }
+  .cell.saknas:hover { background: rgba(47,125,36,0.07); }
   .cell.rattad::after { content: "•"; color: #e2622c; font-size: 11px; vertical-align: super; }
   .summa { font-weight: 700; white-space: nowrap; }
   .notiser { color: #4e6b32; font-weight: 500; }
@@ -593,7 +596,7 @@ function panelHtml(poster, key) {
   const key = ${JSON.stringify(key || "")};
   document.addEventListener("click", async (e) => {
     const cell = e.target.closest(".cell");
-    if (!cell || cell.classList.contains("empty")) return;
+    if (!cell) return;
     const done = cell.dataset.done === "1" ? false : true;
     cell.style.opacity = "0.4";
     const res = await fetch("/panel/toggle" + (key ? "?key=" + encodeURIComponent(key) : ""), {
@@ -605,6 +608,7 @@ function panelHtml(poster, key) {
     if (!res.ok) { alert("Kunde inte spara ändringen."); return; }
     cell.dataset.done = done ? "1" : "0";
     cell.textContent = done ? "✓" : "";
+    cell.classList.remove("saknas");
     cell.classList.toggle("klar", done);
     cell.classList.toggle("oklar", !done);
     cell.classList.add("rattad");
@@ -709,9 +713,15 @@ async function handleRequest(request, env, url) {
     if (!body.date || !body.id) return json({ error: "date och id krävs" }, 400);
 
     const raw = await env.PUSH_KV.get(HISTORY_PREFIX + body.date);
-    if (!raw) return json({ error: "ingen dag att rätta" }, 404);
-    const post = JSON.parse(raw);
-    const tasks = (post.tasks || []).map((t) => (t.id === body.id ? { ...t, done: !!body.done } : t));
+    const post = raw ? JSON.parse(raw) : {};
+    const befintliga = post.tasks || [];
+    const finns = befintliga.some((t) => t.id === body.id);
+    const mall = TASK_ORDER.find((k) => k.id === body.id);
+    const tasks = finns
+      ? befintliga.map((t) => (t.id === body.id ? { ...t, done: !!body.done } : t))
+      : befintliga.concat([
+          { id: body.id, emoji: mall ? mall.emoji : "", text: mall ? mall.label : body.id, done: !!body.done }
+        ]);
     const corrected = { ...(post.corrected || {}), [body.id]: !!body.done };
 
     await mergeHistory(env, body.date, {
