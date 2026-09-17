@@ -6,7 +6,8 @@
    Uppgifterna ligger i TASKS här nedanför. Lägg gärna till fler,
    det enda som krävs är ett unikt id, en emoji och en text.
    everyDays: 3 betyder rullande var tredje dag räknat från senaste
-   gången uppgiften bockades av.
+   gången uppgiften bockades av. days: [3, 6] betyder i stället bestämda
+   veckodagar (0 = söndag, 1 = måndag ... 6 = lördag).
    ========================================================= */
 
 const STORAGE_KEY = "mrs_raccoon_state_v1";
@@ -28,10 +29,10 @@ const TASKS = [
   { id: "gott", emoji: "🍫", text: "Unna dig något gott", hint: "Kaffe, kaka, bad, en halvtimme i soffan. Du bestämmer." },
   { id: "fru", emoji: "💌", text: "Skicka ett gulligt meddelande till din fru", hint: "En rad räcker. Hon sparar den hela dagen." },
   { id: "tankfru", emoji: "💭", text: "Tänk på din fru!", hint: "Tio sekunder. Minns något du gillar med henne, bara för dig själv." },
-  { id: "tvatt-sortera", emoji: "🧺", text: "Sortera och lägg in en tvätt", hint: "Vitt för sig, kulört för sig. Maskinen är laddad och redo." },
-  { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Tryck på knappen. Tvättbjörnen är personligt engagerad i den här." },
-  { id: "dammsug", emoji: "🔌", text: "Dammsug 2 rum", hint: "En gång i veckan. Välj de rum som stör dig mest.", everyDays: 7 },
-  { id: "nedanvaning", emoji: "🧹", text: "Plocka undan på nedanvåningen", hint: "En runda med korgen. Allt som ligger fel åker med." },
+  { id: "tvatt-sortera", emoji: "🧺", text: "Sortera och lägg in en tvätt", hint: "Varannan dag. Vitt för sig, kulört för sig.", everyDays: 2 },
+  { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Var tredje dag. Tryck på knappen, tvättbjörnen är personligt engagerad.", everyDays: 3 },
+  { id: "dammsug", emoji: "🔌", text: "Dammsug 1 rum", hint: "Onsdagar och lördagar. Ett rum räcker.", days: [3, 6] },
+  { id: "nedanvaning", emoji: "🧹", text: "Plocka undan 10 saker från nedanvåningen", hint: "Tio saker, inte mer. Räkna dem högt om du vill." },
   { id: "stada", emoji: "🧼", text: "Städa nåt!", hint: "Vad som helst. En yta, ett skåp, en hylla. Du väljer." },
   { id: "tradgard", emoji: "🌿", text: "Ta en runda i trädgården", hint: "Bara gå ut och titta. Räknas även om du inte gör något." },
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }
@@ -198,11 +199,16 @@ function rolloverDay() {
 
 /* --------------------------- uppgifter --------------------------- */
 
+function weekdayOf(dateStr) {
+  return new Date(dateStr + "T12:00:00Z").getUTCDay(); // 0 = söndag
+}
+
 function isTaskActive(task) {
-  if (!task.everyDays) return true;
   // redan avbockad idag: ligger kvar i listan resten av dagen, annars
-  // skulle rullande uppgifter försvinna i samma stund de kryssades i
+  // skulle uppgiften försvinna i samma stund den kryssades i
   if (state.done[task.id]) return true;
+  if (task.days) return task.days.includes(weekdayOf(state.dateStr));
+  if (!task.everyDays) return true;
   const due = state.due[task.id] || state.dateStr;
   return daysBetween(due, state.dateStr) >= 0; // förfallen eller exakt idag
 }
@@ -311,6 +317,10 @@ function render() {
 // Visar när de rullande uppgifterna är inbokade nästa gång.
 function renderRunInfo() {
   const box = document.getElementById("run-info");
+  const dagNamn = ["söndagar", "måndagar", "tisdagar", "onsdagar", "torsdagar", "fredagar", "lördagar"];
+  const veckoRader = TASKS.filter((t) => t.days).map(
+    (task) => `${task.emoji} ${task.text}: ${task.days.map((d) => dagNamn[d]).join(" och ")}.`
+  );
   const rows = TASKS.filter((t) => t.everyDays).map((task) => {
     const due = state.due[task.id] || state.dateStr;
     const diff = daysBetween(state.dateStr, due);
@@ -319,7 +329,7 @@ function renderRunInfo() {
     if (diff === 1) return `${task.emoji} Nästa gång för ${namn}: imorgon.`;
     return `${task.emoji} Nästa gång för ${namn}: om ${diff} dagar (${due}).`;
   });
-  box.innerHTML = rows.map((r) => `<div>${r}</div>`).join("");
+  box.innerHTML = rows.concat(veckoRader).map((r) => `<div>${r}</div>`).join("");
 }
 
 function showToast(message) {
@@ -423,8 +433,8 @@ function syncToWorker() {
       treatDone: !!state.done.gott,
       wifeDone: !!state.done.fru,
       thinkDone: !!state.done.tankfru,
-      laundrySortDone: !!state.done["tvatt-sortera"],
-      laundryRunDone: !!state.done["tvatt-kor"],
+      laundrySortDone: !isTaskDueToday("tvatt-sortera") || !!state.done["tvatt-sortera"],
+      laundryRunDone: !isTaskDueToday("tvatt-kor") || !!state.done["tvatt-kor"],
       vacuumDone: !isTaskDueToday("dammsug") || !!state.done.dammsug,
       gardenDone: !!state.done.tradgard,
       tidyDone: !!state.done.nedanvaning,
