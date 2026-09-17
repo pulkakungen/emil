@@ -91,7 +91,7 @@ function denied() {
 
 // Normaliserad lägesbild för föräldrapanelen, samma form som de andra
 // apparna lämnar, så panelen slipper veta hur den här är byggd inuti.
-async function buildSummary(env, url) {
+async function buildSummary(env, url, request) {
   const now = new Date();
   const { dateStr } = stockholmParts(now);
   const subRaw = await env.PUSH_KV.get(SUB_KEY);
@@ -128,7 +128,7 @@ async function buildSummary(env, url) {
 
   // Länkar så att föräldrapanelen kan lägga en knapp rakt in i dagsvyn.
   // Nyckeln följer med om anroparen använde en, annars behövs ingen.
-  const key = url ? url.searchParams.get("key") : null;
+  const key = (url ? url.searchParams.get("key") : null) || (request ? request.headers.get("X-Admin-Key") : null);
   const lank = (path) => (url ? url.origin + path + (key ? "?key=" + encodeURIComponent(key) : "") : null);
 
   return {
@@ -725,7 +725,7 @@ async function handleRequest(request, env, url) {
   if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
 
   if (path === "/admin/summary" && request.method === "GET") {
-    return json(await buildSummary(env, url));
+    return json(await buildSummary(env, url, request));
   }
 
   if (path === "/admin/status" && request.method === "GET") {
