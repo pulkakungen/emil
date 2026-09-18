@@ -151,6 +151,14 @@ export const TASK_NEDANVANING = [
   "Herr tacos, en tvättbjörn plockar upp allt den ser. Gör som jag. 🦝"
 ];
 
+export const TASK_KAFFE = [
+  "Kaffestationen, älskling. Torka av och fyll på, det tar tre minuter. ☕",
+  "Äcklis, sudda bort kafferingarna så blir morgonen finare imorgon. 🤎",
+  "Gullis, skölj ur och fyll på vid kaffet. Ditt framtida jag tackar dig. ⏳",
+  "Snutt, en ren kaffestation är halva morgonhumöret. Fixa den. ☕✨",
+  "Herr tacos, kaffehörnan ropar. Du vet vad som ska göras. 🫘"
+];
+
 export const TASK_STADA = [
   "Städa nåt! Vad som helst. En yta räcker, älskling. 🧼",
   "Äcklis, välj en enda yta och gör den fin. Sen är du klar. ✨",

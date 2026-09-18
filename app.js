@@ -33,6 +33,7 @@ const TASKS = [
   { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Var tredje dag. Tryck på knappen, tvättbjörnen är personligt engagerad.", everyDays: 3 },
   { id: "dammsug", emoji: "🔌", text: "Dammsug 1 rum", hint: "Onsdagar och lördagar. Ett rum räcker.", days: [3, 6] },
   { id: "nedanvaning", emoji: "🧹", text: "Plocka undan 10 saker från nedanvåningen", hint: "Tio saker, inte mer. Räkna dem högt om du vill." },
+  { id: "kaffe", emoji: "☕", text: "Städa kaffestationen", hint: "Torka av, skölj ur, fyll på. Morgondagens du blir glad." },
   { id: "stada", emoji: "🧼", text: "Städa nåt!", hint: "Vad som helst. En yta, ett skåp, en hylla. Du väljer." },
   { id: "tradgard", emoji: "🌿", text: "Ta en runda i trädgården", hint: "Bara gå ut och titta. Räknas även om du inte gör något." },
   { id: "spring", emoji: "👟", text: "Spring en runda", hint: "Rullande var tredje dag. Långsamt räknas också.", everyDays: 3 }

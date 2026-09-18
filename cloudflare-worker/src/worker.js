@@ -21,6 +21,7 @@ import {
   TASK_TRADGARD,
   TASK_NEDANVANING,
   TASK_STADA,
+  TASK_KAFFE,
   TASK_SPRING,
   SPECIAL_DAYS,
   LOVE,
@@ -279,12 +280,13 @@ const TASK_POOLS = {
   dammsug: TASK_DAMMSUG,
   nedanvaning: TASK_NEDANVANING,
   stada: TASK_STADA,
+  kaffe: TASK_KAFFE,
   tradgard: TASK_TRADGARD,
   spring: TASK_SPRING
 };
 
 // Sysslor han bara hinner med när han är hemma.
-const HOME_TASKS = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada", "tradgard", "spring"];
+const HOME_TASKS = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "stada", "kaffe", "tradgard", "spring"];
 
 // Uppgifter som passar bäst under en viss del av dagen.
 const TIME_WINDOWS = { trakigt: [0, 15 * 60], gott: [15 * 60, 24 * 60], fru: [11 * 60, 24 * 60] };
