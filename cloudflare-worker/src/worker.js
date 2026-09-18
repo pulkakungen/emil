@@ -43,6 +43,7 @@ const STATE_KEY = "state";
 const RECENT_KEY = "recent";
 const SCHEDULE_PREFIX = "schedule:";
 const HISTORY_PREFIX = "history:";
+const EXTRA_PREFIX = "extra:"; // engångsuppgifter som föräldrapanelen lägger till
 
 // Hur många kärleksnotiser som slumpas ut per dygn. Ändra siffran här.
 const PUSHES_PER_DAY = 5;
@@ -159,6 +160,8 @@ async function buildSummary(env, url, request) {
     totalToday: tasks.length,
     tasks,
     remindersSentToday: slots.filter((s) => s.sent).map((s) => s.message || "notis"),
+    supportsExtra: true,
+    extra: await readExtras(env, dateStr),
     affirmation: null,
     history
   };
@@ -406,6 +409,16 @@ async function saveSchedule(env, dateStr, slots) {
   });
 }
 
+async function readExtras(env, dateStr) {
+  const raw = await env.PUSH_KV.get(EXTRA_PREFIX + dateStr);
+  const list = raw ? JSON.parse(raw) : [];
+  return Array.isArray(list) ? list : [];
+}
+
+async function writeExtras(env, dateStr, list) {
+  await env.PUSH_KV.put(EXTRA_PREFIX + dateStr, JSON.stringify(list), { expirationTtl: 60 * 60 * 24 * 60 });
+}
+
 async function mergeHistory(env, dateStr, patch) {
   const raw = await env.PUSH_KV.get(HISTORY_PREFIX + dateStr);
   const existing = raw ? JSON.parse(raw) : {};
@@ -549,6 +562,12 @@ async function handleRequest(request, env, url) {
   // Appen hämtar den publika VAPID-nyckeln härifrån i stället för att ha
   // den inskriven i koden, så den aldrig kan hamna i otakt med workern.
   // Publika nyckeln är just publik, den är ofarlig att lämna ut.
+  // Appen frågar efter dagens extrauppgifter. Öppen, precis som /sync.
+  if (path === "/extra" && request.method === "GET") {
+    const dateStr = url.searchParams.get("date") || stockholmParts(new Date()).dateStr;
+    return json({ date: dateStr, tasks: await readExtras(env, dateStr) });
+  }
+
   if (path === "/vapid" && request.method === "GET") {
     return json({ publicKey: env.VAPID_PUBLIC_KEY || null });
   }
@@ -567,6 +586,32 @@ async function handleRequest(request, env, url) {
   if (panelRes) return panelRes;
 
   if (path.startsWith("/admin") && !adminKeyOk(request, url, env)) return denied();
+
+  // Föräldrapanelen lägger till eller tar bort en engångsuppgift.
+  if (path === "/admin/extra" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    const text = (body.text || "").trim();
+    if (!text) return json({ ok: false, error: "ingen text" }, 400);
+    const dateStr = body.date || stockholmParts(new Date()).dateStr;
+    const list = await readExtras(env, dateStr);
+    const task = {
+      id: "extra-" + dateStr + "-" + Math.random().toString(36).slice(2, 8),
+      emoji: (body.emoji || "⭐").slice(0, 4),
+      text: text.slice(0, 80),
+      date: dateStr
+    };
+    list.push(task);
+    await writeExtras(env, dateStr, list);
+    return json({ ok: true, task, tasks: list });
+  }
+
+  if (path === "/admin/extra/delete" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    const dateStr = body.date || stockholmParts(new Date()).dateStr;
+    const list = (await readExtras(env, dateStr)).filter((t) => t.id !== body.id);
+    await writeExtras(env, dateStr, list);
+    return json({ ok: true, tasks: list });
+  }
 
   if (path === "/admin/summary" && request.method === "GET") {
     return json(await buildSummary(env, url, request));

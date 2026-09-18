@@ -199,6 +199,40 @@ function rolloverDay() {
   }
 }
 
+/* ------------------- extrauppgifter från panelen -------------------
+   Läggs till av föräldrapanelen, gäller en enskild dag och hämtas från
+   workern. Sparas lokalt så de finns kvar utan uppkoppling. */
+const EXTRA_CACHE_KEY = "mrs_raccoon_extra_v1";
+let extraTasks = [];
+
+function loadExtras() {
+  try {
+    const raw = localStorage.getItem(EXTRA_CACHE_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    extraTasks = Array.isArray(list) ? list : [];
+  } catch (e) {
+    extraTasks = [];
+  }
+}
+
+function extrasToday() {
+  return extraTasks.filter((t) => t.date === state.dateStr);
+}
+
+async function fetchExtras() {
+  try {
+    const res = await fetch(PUSH_WORKER_URL + "/extra?date=" + state.dateStr);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data.tasks)) return;
+    extraTasks = data.tasks;
+    localStorage.setItem(EXTRA_CACHE_KEY, JSON.stringify(extraTasks));
+    render();
+  } catch (e) {
+    // ingen uppkoppling, de sparade får duga
+  }
+}
+
 /* --------------------------- uppgifter --------------------------- */
 
 function weekdayOf(dateStr) {
@@ -216,7 +250,7 @@ function isTaskActive(task) {
 }
 
 function activeTasks() {
-  return TASKS.filter(isTaskActive);
+  return TASKS.filter(isTaskActive).concat(extrasToday());
 }
 
 function doneCount() {
@@ -229,7 +263,7 @@ function allDoneToday() {
 }
 
 function toggleTask(id) {
-  const task = TASKS.find((t) => t.id === id);
+  const task = TASKS.find((t) => t.id === id) || extrasToday().find((t) => t.id === id);
   if (!task) return;
 
   const wasDone = !!state.done[id];
@@ -268,6 +302,7 @@ function toggleTask(id) {
 
   saveState();
   render();
+  fetchExtras();
   syncToWorker();
 }
 
@@ -491,6 +526,7 @@ let poseTimer = null;
 
 function init() {
   loadState();
+  loadExtras();
   render();
   setPose(allDoneToday() ? "cheer" : idleMood());
   const hintEl = document.getElementById("pet-hint");
@@ -555,6 +591,7 @@ function init() {
     rolloverDay();
     saveState();
     render();
+    fetchExtras();
   });
 
   if ("serviceWorker" in navigator) {
