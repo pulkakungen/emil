@@ -10,7 +10,10 @@
    veckodagar (0 = söndag, 1 = måndag ... 6 = lördag).
    ========================================================= */
 
-const STORAGE_KEY = "mrs_raccoon_state_v1";
+// Demoläge: öppna sidan med ?demo=1 för att visa upp appen utan att röra
+// den riktiga sparningen, utan att synka och utan att ta över notiserna.
+const DEMO_MODE = new URLSearchParams(location.search).get("demo") === "1";
+const STORAGE_KEY = DEMO_MODE ? "mrs_raccoon_demo_state_v1" : "mrs_raccoon_state_v1";
 const MESSAGE_CACHE_KEY = "mrs_raccoon_messages_v1";
 
 const PUSH_WORKER_URL = "https://mrs-raccoon-push.bella-sassibrass.workers.dev";
@@ -202,7 +205,7 @@ function rolloverDay() {
 /* ------------------- extrauppgifter från panelen -------------------
    Läggs till av föräldrapanelen, gäller en enskild dag och hämtas från
    workern. Sparas lokalt så de finns kvar utan uppkoppling. */
-const EXTRA_CACHE_KEY = "mrs_raccoon_extra_v1";
+const EXTRA_CACHE_KEY = DEMO_MODE ? "mrs_raccoon_demo_extra_v1" : "mrs_raccoon_extra_v1";
 let extraTasks = [];
 
 function loadExtras() {
@@ -410,6 +413,7 @@ async function getPushSubscription() {
 }
 
 async function enablePush() {
+  if (DEMO_MODE) return false;
   if (!("Notification" in window) || !("PushManager" in window)) {
     alert("Den här webbläsaren stödjer tyvärr inte push-notiser. På iPhone: lägg till appen på hemskärmen först.");
     return false;
@@ -457,6 +461,7 @@ async function refreshNotifButton() {
 // Skickar dagens lista till servern: den styr knuffarna och är samtidigt
 // underlaget till panelvyn, så inget som han gjort bara ligger i telefonen.
 function syncToWorker() {
+  if (DEMO_MODE) return;
   fetch(PUSH_WORKER_URL + "/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
