@@ -559,6 +559,12 @@ async function handleRequest(request, env, url) {
 
   if (path === "/subscribe" && request.method === "POST") {
     const subscription = await request.json();
+    // spara vem som slog på klockan, annars går det inte att se vilken enhet
+    // notiserna faktiskt går till när något inte kommer fram
+    subscription.enhet = {
+      userAgent: (request.headers.get("User-Agent") || "").slice(0, 160),
+      at: new Date().toISOString()
+    };
     await env.PUSH_KV.put(SUB_KEY, JSON.stringify(subscription));
     return json({ ok: true });
   }
@@ -676,6 +682,19 @@ async function handleRequest(request, env, url) {
       "=== Mrs Raccoon push-status 🦝 ===",
       "",
       `Prenumeration finns: ${subRaw ? "JA ✅" : "NEJ ❌ (klockan 🔔 är inte påslagen på hans telefon)"}`,
+      ...(subRaw
+        ? (() => {
+            const sub = JSON.parse(subRaw);
+            const enhet = sub.enhet || {};
+            const ua = enhet.userAgent || "okänd enhet";
+            const typ = /Android/i.test(ua) ? "Android 📱" : /iPhone|iPad/i.test(ua) ? "iPhone 📱" : /Windows|Macintosh|Linux/i.test(ua) ? "dator 💻" : "okänd";
+            return [
+              `  Enhet: ${typ}`,
+              `  Påslagen: ${enhet.at ? enhet.at.replace("T", " ").slice(0, 16) : "okänt (slogs på innan appen började spara det)"}`,
+              `  Webbläsare: ${ua.slice(0, 90)}`
+            ];
+          })()
+        : []),
       `Svensk lokaltid nu: ${hhmm(minutesOfDay)} (${dateStr})`,
       `Tyst period: ${hhmm(WINDOW_END_MIN)} till ${hhmm(WINDOW_START_MIN)}`,
       "",
