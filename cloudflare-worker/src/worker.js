@@ -373,23 +373,30 @@ async function sendSpecialIfDue(env, dateStr, minutesOfDay) {
    eller sätt SPICY_ENABLED till false här.
    ----------------------------------------------------------------- */
 const SPICY_ENABLED = true;
-const SPICY_START_MIN = 20 * 60 + 30; // 20.30
+// Fast tid varje kväll. Sätt den till null om du hellre vill ha en slumpad
+// tid inom fönstret nedan.
+const SPICY_FIXED_MIN = 21 * 60 + 15; // 21.15
+const SPICY_START_MIN = 20 * 60 + 30; // 20.30, används bara vid slumpad tid
 const SPICY_END_MIN = 23 * 60 + 30; // 23.30
 const SPICY_PREFIX = "spicy:";
 
 async function maybeSendSpicy(env, dateStr, minutesOfDay) {
   if (!SPICY_ENABLED || !SPICY.length) return false;
-  if (minutesOfDay < SPICY_START_MIN || minutesOfDay >= SPICY_END_MIN) return false;
+  const tidigast = SPICY_FIXED_MIN === null ? SPICY_START_MIN : SPICY_FIXED_MIN;
+  if (minutesOfDay < tidigast || minutesOfDay >= SPICY_END_MIN) return false;
 
   const key = SPICY_PREFIX + dateStr;
   const raw = await env.PUSH_KV.get(key);
   const post = raw ? JSON.parse(raw) : null;
   if (post && post.sent) return false;
 
-  // lotta kvällens tid en gång per dygn, så den aldrig kommer på klockslag
-  const slot = post
-    ? post.at
-    : SPICY_START_MIN + Math.floor(Math.random() * (SPICY_END_MIN - SPICY_START_MIN));
+  // fast tid, eller lottad en gång per dygn om SPICY_FIXED_MIN är null
+  const slot =
+    SPICY_FIXED_MIN !== null
+      ? SPICY_FIXED_MIN
+      : post
+        ? post.at
+        : SPICY_START_MIN + Math.floor(Math.random() * (SPICY_END_MIN - SPICY_START_MIN));
   if (!post) await env.PUSH_KV.put(key, JSON.stringify({ at: slot, sent: false }), { expirationTtl: 60 * 60 * 48 });
   if (minutesOfDay < slot) return false;
 
