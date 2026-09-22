@@ -259,7 +259,7 @@ export const SPECIAL_DAYS = [
    Ändra fritt, och ta bort hela listan om ni tröttnar.
    --------------------------------------------------------- */
 export const SPICY = [
-  "Jag tänker på dig, älskling. Och tankarna håller sig inte på mattan. 😏",
+  "Jag tänker på dig, älskling. Och tankarna är allt annat än oskyldiga. 😏",
   "Kom hem. Jag har planer, och de innefattar inte tv. 🔥",
   "Äcklis. Lås dörren när du kommer upp. 🗝️",
   "Bara så du vet vad som väntar: jag har saknat dig hela dagen. Hela. 😌",
@@ -275,7 +275,7 @@ export const SPICY = [
   "Släck lampan lite tidigare ikväll, älskling. 🕯️",
   "Du är olagligt snygg och jag tänker göra något åt det. 🔥",
   "Herr tacos, jag har en idé. Den kräver att vi är ensamma. 😏",
-  "Sista tanken innan jag somnar är alltid du. Och den är sällan oskyldig. 😇",
+  "Sista tanken innan jag somnar är alltid du. Varje kväll. 😇",
   "Snutt, kom hit. Jag ska viska något. 👂",
   "Jag älskar dig. Och jag vill ha dig. Båda lika mycket just nu. ❤️‍🔥",
   "Imorgon kan vänta. Ikväll finns bara vi två. 🌙"
