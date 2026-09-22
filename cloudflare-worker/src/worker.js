@@ -24,6 +24,7 @@ import {
   TASK_KAFFE,
   TASK_SPRING,
   SPECIAL_DAYS,
+  SPICY,
   LOVE,
   PEP,
   BUS,
@@ -365,6 +366,43 @@ async function sendSpecialIfDue(env, dateStr, minutesOfDay) {
   return true;
 }
 
+/* ------------------- kvällens hetare hälsning -------------------
+
+   En per dygn på slumpad tid mellan 20.30 och 23.30, utanför de vanliga
+   fem notiserna. Vill du stänga av den: töm listan SPICY i messages.js,
+   eller sätt SPICY_ENABLED till false här.
+   ----------------------------------------------------------------- */
+const SPICY_ENABLED = true;
+const SPICY_START_MIN = 20 * 60 + 30; // 20.30
+const SPICY_END_MIN = 23 * 60 + 30; // 23.30
+const SPICY_PREFIX = "spicy:";
+
+async function maybeSendSpicy(env, dateStr, minutesOfDay) {
+  if (!SPICY_ENABLED || !SPICY.length) return false;
+  if (minutesOfDay < SPICY_START_MIN || minutesOfDay >= SPICY_END_MIN) return false;
+
+  const key = SPICY_PREFIX + dateStr;
+  const raw = await env.PUSH_KV.get(key);
+  const post = raw ? JSON.parse(raw) : null;
+  if (post && post.sent) return false;
+
+  // lotta kvällens tid en gång per dygn, så den aldrig kommer på klockslag
+  const slot = post
+    ? post.at
+    : SPICY_START_MIN + Math.floor(Math.random() * (SPICY_END_MIN - SPICY_START_MIN));
+  if (!post) await env.PUSH_KV.put(key, JSON.stringify({ at: slot, sent: false }), { expirationTtl: 60 * 60 * 48 });
+  if (minutesOfDay < slot) return false;
+
+  const recent = await getRecent(env);
+  const message = pickFresh(SPICY, recent);
+  const delivered = await sendPush(env, message);
+  if (!delivered) return false;
+
+  await env.PUSH_KV.put(key, JSON.stringify({ at: slot, sent: true, message }), { expirationTtl: 60 * 60 * 48 });
+  await rememberSent(env, message);
+  return true;
+}
+
 /* --------------------- dagens slumpade tider --------------------- */
 
 // Lottar fram dagens notistider en gång per dygn och sparar dem i KV,
@@ -454,6 +492,9 @@ async function runSchedule(env) {
 
   // Märkesdagar går före allt annat och ligger utanför dagens lottade tider.
   if (await sendSpecialIfDue(env, dateStr, minutesOfDay)) return;
+
+  // Kvällens hetare hälsning, också utanför de fem vanliga.
+  if (await maybeSendSpicy(env, dateStr, minutesOfDay)) return;
 
   const slots = await getSchedule(env, dateStr, minutesOfDay);
   const due = slots.find(
@@ -637,6 +678,13 @@ async function handleRequest(request, env, url) {
         : ["  (inga lottade än idag)"]),
       "",
       `App-status: ${stateRaw || "appen har aldrig synkat"}`,
+      "",
+      `Kvällens hälsning: ${await (async () => {
+        const raw = await env.PUSH_KV.get(SPICY_PREFIX + dateStr);
+        if (!raw) return "inte lottad än";
+        const p = JSON.parse(raw);
+        return p.sent ? `skickad ${hhmm(p.at)}` : `lottad till ${hhmm(p.at)}`;
+      })()}`,
       "",
       "Märkesdagar:",
       ...SPECIAL_DAYS.map((d) => `  ${d.id}: om ${daysUntil(dateStr, d.month, d.day)} dagar`)

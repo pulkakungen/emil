@@ -250,3 +250,33 @@ export const SPECIAL_DAYS = [
     ]
   }
 ];
+
+/* ---------------------------------------------------------
+   Kvällens hetare hälsning
+
+   En per dygn, på slumpad tid sent på kvällen. Hålls antydande snarare
+   än explicit, den kan landa på en låst skärm i ett rum med folk i.
+   Ändra fritt, och ta bort hela listan om ni tröttnar.
+   --------------------------------------------------------- */
+export const SPICY = [
+  "Jag tänker på dig, älskling. Inte på ett snällt sätt. 😏",
+  "Kom hem. Jag har planer, och de innefattar inte tv. 🔥",
+  "Äcklis. Lås dörren när du kommer upp. 🗝️",
+  "Bara så du vet vad som väntar: jag har saknat dig hela dagen. Hela. 😌",
+  "Gullis, jag hoppas du inte är för trött ikväll. 🙃",
+  "Du har ingen aning om vad du gör med mig bara genom att finnas. 🥵",
+  "Herr tacos, ikväll är du min. Inga invändningar godtas. 💋",
+  "Snutt, sluta läsa det här och kom och hitta mig. 👀",
+  "Jag vill ha dig närmare än vad som egentligen är praktiskt. 😈",
+  "Tänkte berätta vad jag tänker på. Sen tänkte jag att jag hellre visar. 🤫",
+  "Äcklis, du får en kyss när du kommer in genom dörren. Sen får vi se. 💋",
+  "Jag har tänkt på dig i duschen igen. Det var allt jag tänkte säga. 🚿",
+  "Gullis, jag är varm och det är inte vädrets fel. 🌡️",
+  "Släck lampan lite tidigare ikväll, älskling. 🕯️",
+  "Du är olagligt snygg och jag tänker göra något åt det. 🔥",
+  "Herr tacos, jag har en idé. Den kräver att vi är ensamma. 😏",
+  "Sista tanken innan jag somnar är alltid du. Och den är sällan oskyldig. 😇",
+  "Snutt, kom hit. Jag ska viska något. 👂",
+  "Jag älskar dig. Och jag vill ha dig. Båda lika mycket just nu. ❤️‍🔥",
+  "Imorgon kan vänta. Ikväll finns bara vi två. 🌙"
+];
