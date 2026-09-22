@@ -699,6 +699,15 @@ async function handleRequest(request, env, url) {
     return text(lines.join("\n"));
   }
 
+  // Skickar kvällens hälsning direkt, för att testa den utan att vänta.
+  if (path === "/admin/spicy-now" && request.method === "GET") {
+    const recent = await getRecent(env);
+    const message = pickFresh(SPICY, recent);
+    const ok = await sendPush(env, message);
+    if (ok) await rememberSent(env, message);
+    return text(ok ? `Skickad! 💌\n\n${message}` : "Misslyckades, troligen finns ingen aktiv prenumeration just nu.");
+  }
+
   // Skriver dagens rad till kalkylarket direkt, för att testa kopplingen.
   if (path === "/admin/sheet-now" && request.method === "GET") {
     const { dateStr, minutesOfDay } = stockholmParts(new Date());
