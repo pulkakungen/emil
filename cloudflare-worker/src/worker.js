@@ -375,7 +375,7 @@ async function sendSpecialIfDue(env, dateStr, minutesOfDay) {
 const SPICY_ENABLED = true;
 // Fast tid varje kväll. Sätt den till null om du hellre vill ha en slumpad
 // tid inom fönstret nedan.
-const SPICY_FIXED_MIN = 21 * 60 + 15; // 21.15
+const SPICY_FIXED_MIN = 21 * 60 + 25; // 21.25
 const SPICY_START_MIN = 20 * 60 + 30; // 20.30, används bara vid slumpad tid
 const SPICY_END_MIN = 23 * 60 + 30; // 23.30
 const SPICY_PREFIX = "spicy:";
