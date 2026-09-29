@@ -27,7 +27,25 @@ export const LOVE = [
   "Herr tacos, du luktar gott och är fin i håret. Det var allt. Slut på meddelandet.",
   "Jag är på ditt lag. Alltid. Även när du har fel. Särskilt då. 😄",
   "Du är inte för mycket och inte för lite. Du är precis lagom, älskling.",
-  "Jag längtar hem till dig. 🥰"
+  "Jag längtar hem till dig. 🥰",
+  "Du är min lugnaste plats, älskling. Mitt i allt annat. 🤍",
+  "Jag skulle valt dig i vilket rum som helst, gullis. Varje gång.",
+  "Tack för att du orkar med mig när jag är jobbig, äcklis. Jag vet att jag är det ibland. 😅",
+  "Du är rolig, och det är underskattat. Jag skrattar mest med dig, snutt. 😄",
+  "Herr tacos, du är en bra man. Inte perfekt, bra. Det är mycket finare.",
+  "Jag är glad att det blev just du och jag. 💫",
+  "Du behöver inte säga något klokt idag. Du behöver bara vara du. 🤍",
+  "Om du är trött får du vara trött, älskling. Jag tycker om dig ändå.",
+  "Jag tänker på hur du ser ut när du sover. Det är min favoritbild. 😌",
+  "Gullis, du gör vardagen värd att vara vardag. 🏡",
+  "Ingen känner mig som du gör, äcklis. Ingen.",
+  "Du hör hemma hos mig. Det är hela grejen. 🧡",
+  "Jag är på din sida även när ingen annan är det, snutt.",
+  "Herr tacos, jag tycker om ditt skratt mer än jag sagt högt. 😊",
+  "Du är inte en punkt på min lista. Du är anledningen till listan, älskling. ❤️",
+  "Jag saknar dig lite jämt. Även när du är i rummet bredvid. 🫶",
+  "Det finns ingen jag hellre blir gammal med, gullis. 👵👴",
+  "Vi två klarar det mesta. Det har vi visat förut. 💪❤️"
 ];
 
 // Pepp och coachning
@@ -49,7 +67,25 @@ export const PEP = [
   "Ta det som en tvättbjörn: rota igenom röran och ta det bästa du hittar. 🦝",
   "En dålig timme är inte en dålig dag, äcklis. Starta om när du vill.",
   "Du har redan gjort svårare saker än det här, herr tacos. Kom ihåg det.",
-  "Klart är bättre än perfekt. Kör på, älskling! 🚀"
+  "Klart är bättre än perfekt. Kör på, älskling! 🚀",
+  "En sak i taget, älskling. Inte allt, en sak. 🎯",
+  "Det behöver inte vara bra. Det behöver bli gjort, äcklis.",
+  "Du har rätt att pausa utan att ha förtjänat det, gullis. ☕",
+  "Snutt, du gör mer än du tror. Du räknar bara inte det du gör.",
+  "Herr tacos, sänk ribban en aning idag. Du når den ändå. 🪜",
+  "Jobbig dag? Gör bara nästa lilla grej. Sen nästa. 🐾",
+  "Du behöver inte hinna allt, älskling. Du behöver hinna det viktiga.",
+  "Trött räknas inte som misslyckad, äcklis. 😴",
+  "Kom ihåg att äta något ordentligt idag. Hjärnan går på bränsle. 🍽️",
+  "Gullis, ställ dig upp och sträck på dig. Ja, nu. 🙆",
+  "Du är mitt i något svårt, och du gör det ändå. Det är styrka, snutt. 🧗",
+  "Imorgon finns också. Allt behöver inte hända idag. 🌅",
+  "Herr tacos, du löser saker. Det är liksom din grej. 🔧",
+  "Ett dåligt möte är inte en dålig dag, älskling.",
+  "Andas in fyra, håll fyra, andas ut sex. Så. Bättre? 🌬️",
+  "Du får be om hjälp. Det är inte fusk, äcklis. 🤝",
+  "Gullis, du har redan gjort det jobbigaste. Resten är nedförsbacke. ⛷️",
+  "Det räcker att du försöker. Det gör det faktiskt, snutt. 🤍"
 ];
 
 // Busigt och flörtigt
@@ -65,7 +101,19 @@ export const BUS = [
   "Du får en puss när du kommer hem. Minst en. 💋",
   "Jag skickar det här bara för att få din uppmärksamhet. Det funkade. 😈",
   "Äcklis, du är olagligt snygg när du är koncentrerad.",
-  "Kom hem tidigt så ska jag vara extra snäll mot dig. 🔥"
+  "Kom hem tidigt så ska jag vara extra snäll mot dig. 🔥",
+  "Jag gillar när du är bestämd. Det var allt jag tänkte säga. 😏",
+  "Äcklis, du får sluta se så bra ut i den där tröjan. 👕🔥",
+  "Tänkte på något du sa igår. Jag har inte slutat tänka på det. 🙊",
+  "Gullis, om du kysser mig när du kommer hem händer bra saker. 💋",
+  "Herr tacos, du har fortfarande samma effekt på mig som första gången. 😳",
+  "Snutt, jag stirrade på dig i morse. Du märkte inget. 👀",
+  "Du luktar för gott. Det är opraktiskt. 😤❤️",
+  "Jag skulle vilja ha en halvtimme med dig. Ensam. 🤫",
+  "Älskling, du är farlig när du ler så där. 😈",
+  "Äcklis, jag tänker på dina händer. Inget mer om saken. ✋",
+  "Kom hem så ska jag vara olidligt trevlig mot dig. 😇😏",
+  "Gullis, ikväll bestämmer jag. Bara så du vet. 🔥"
 ];
 
 // Fånigt och tvättbjörnigt
@@ -81,7 +129,19 @@ export const FANIGT = [
   "Jag har tvättat mina tassar och är redo att peppa dig professionellt.",
   "Äcklis, om du var ett mellanmål hade du varit ett riktigt bra mellanmål. 🥨",
   "Jag sov hela dagen och tänkte på dig hela natten. Så funkar nattdjur. 🌙",
-  "Nu blev jag rörd av mig själv. Ge dig själv en klapp på axeln från mig. 👏"
+  "Nu blev jag rörd av mig själv. Ge dig själv en klapp på axeln från mig. 👏",
+  "Tvättbjörnsfakta: vi kan öppna nästan vilken lucka som helst. Ditt hjärta var svårast. 🦝🔓",
+  "Jag har tvättat en sten i tre timmar. Ingen vet varför. Inte jag heller. 🪨",
+  "Äcklis, jag har inga tummar men jag skulle ändå hålla din hand. 🐾",
+  "Om jag kunde skulle jag laga middag åt dig. Nu blir det sopor åt mig och middag åt dig. 🗑️🍝",
+  "Gullis, jag har sovit i tolv timmar och ändå hunnit sakna dig. 😴",
+  "Herr tacos, jag har rotat i hela huset och det finaste jag hittat är du. 🏠",
+  "Snutt, mina tassar är rena, mitt samvete mindre. 😬",
+  "Jag ville skriva något smart. Det blev det här i stället. 🦝❤️",
+  "Visste du att tvättbjörnar kan minnas lösningar i tre år? Jag minns din födelsedag också. 🎂",
+  "Jag klättrade upp för att se längre. Såg bara att jag saknade dig. 🌳",
+  "Älskling, jag har inga planer ikväll förutom att vara söt. Det går bra hittills. ✨",
+  "Om det ligger något konstigt i skåpet var det inte jag. 🙈"
 ];
 
 // Knuffar till dagens uppgifter
@@ -278,5 +338,15 @@ export const SPICY = [
   "Sista tanken innan jag somnar är alltid du. Varje kväll. 😇",
   "Snutt, kom hit. Jag ska viska något. 👂",
   "Jag älskar dig. Och jag vill ha dig. Båda lika mycket just nu. ❤️‍🔥",
-  "Imorgon kan vänta. Ikväll finns bara vi två. 🌙"
+  "Imorgon kan vänta. Ikväll finns bara vi två. 🌙",
+  "Jag har tänkt på dig hela eftermiddagen, äcklis. Inte på jobbrelaterade saker. 😏",
+  "Kom hem tidigt. Inga frågor. 🔥",
+  "Gullis, jag har bäddat. Det lär inte hålla länge. 🛏️",
+  "Snutt, du har en timme på dig innan jag börjar sakna dig på riktigt. ⏳",
+  "Herr tacos, det är något med dig ikväll. Eller varje kväll. 😌",
+  "Jag tänkte säga godnatt. Men jag är inte trött alls. 👀",
+  "Älskling, glöm disken ikväll. 🍽️❌",
+  "Jag lovar ingenting, men jag tänker en hel del. 🤭",
+  "Äcklis, kom och lägg dig. Sova var inte planen. 🌙",
+  "Om du vill ha mig är jag här. Det vill du. 😏"
 ];

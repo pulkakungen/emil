@@ -65,7 +65,7 @@ const MIN_GAP_MIN = 45;
 const SLOT_GRACE_MIN = 60;
 
 // Så många senast skickade meddelanden undviks vid nästa slumpning.
-const RECENT_MEMORY = 25;
+const RECENT_MEMORY = 60;
 
 // Hemmasysslorna (tvätt, städ, trädgård, löprunda) hinner han inte med
 // mitt i veckan förrän han är hemma, så de knuffarna skickas bara efter
@@ -262,10 +262,16 @@ async function rememberSent(env, message) {
   await env.PUSH_KV.put(RECENT_KEY, JSON.stringify(recent));
 }
 
-// Slumpar ur en lista men undviker de senast skickade meddelandena.
+// Slumpar ur en lista men undviker de senast skickade meddelandena. Små
+// listor, som kvällens, skulle annars ta slut mot minnet och bli helt
+// slumpade igen, så där räcker det att undvika de allra senaste.
 function pickFresh(list, recent) {
   const fresh = list.filter((m) => !recent.includes(m));
-  return pick(fresh.length ? fresh : list);
+  if (fresh.length >= Math.max(3, Math.ceil(list.length * 0.25))) return pick(fresh);
+
+  const allraSenaste = recent.slice(-5);
+  const halvfriska = list.filter((m) => !allraSenaste.includes(m));
+  return pick(halvfriska.length ? halvfriska : list);
 }
 
 function pickWeighted(recent) {

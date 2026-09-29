@@ -34,7 +34,7 @@ Två notiser per dygn:
 * **en hetare** klockan 21.25 varje kväll
 
 Helt tyst mellan 23.45 och 06.15. Samma meddelande återkommer inte förrän
-25 notiser senare. Knuffar om ogjorda uppgifter är avstängda, sätt
+60 notiser senare, och i de mindre listorna aldrig två gånger i rad. Knuffar om ogjorda uppgifter är avstängda, sätt
 `NUDGE_CHANCE` i workern till 0.3 för att få tillbaka dem.
 
 Texterna ligger i `cloudflare-worker/src/messages.js`, uppdelade i kärlek,
