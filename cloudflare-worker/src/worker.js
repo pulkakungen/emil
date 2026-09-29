@@ -46,8 +46,13 @@ const SCHEDULE_PREFIX = "schedule:";
 const HISTORY_PREFIX = "history:";
 const EXTRA_PREFIX = "extra:"; // engångsuppgifter som föräldrapanelen lägger till
 
-// Hur många kärleksnotiser som slumpas ut per dygn. Ändra siffran här.
-const PUSHES_PER_DAY = 5;
+// En kärleksnotis om dagen, på slumpad tid under dagtid. Kvällens hälsning
+// ligger utanför den här räkningen, så han får två notiser per dygn.
+const PUSHES_PER_DAY = 1;
+
+// Dagtidsfönstret som den notisen lottas inom.
+const DAY_START_MIN = 8 * 60; // 08.00
+const DAY_END_MIN = 18 * 60; // 18.00
 
 // Tyst period: inga notiser mellan 23.45 och 06.15.
 const WINDOW_START_MIN = 6 * 60 + 15; // 06:15
@@ -295,10 +300,9 @@ const HOME_TASKS = ["tvatt-sortera", "tvatt-kor", "dammsug", "nedanvaning", "sta
 // Uppgifter som passar bäst under en viss del av dagen.
 const TIME_WINDOWS = { trakigt: [0, 15 * 60], gott: [15 * 60, 24 * 60], fru: [11 * 60, 24 * 60] };
 
-// Ibland blir notisen en knuff till en uppgift i stället för ren pepp,
-// men bara om uppgiften är kvar att göra och bara ungefär var tredje notis.
-// Resten av tiden är det kärlek och pepp, som det ska vara.
-const NUDGE_CHANCE = 0.3;
+// Dagens enda notis ska vara kärlek och pepp, inget tjat om sysslor. Vill du
+// ha tillbaka knuffarna sätter du chansen till exempelvis 0.3 igen.
+const NUDGE_CHANCE = 0;
 
 function chooseMessage(state, minutesOfDay, weekday, recent) {
   if (!state || !Array.isArray(state.tasks)) return pickWeighted(recent);
@@ -415,8 +419,8 @@ async function maybeSendSpicy(env, dateStr, minutesOfDay) {
 // Lottar fram dagens notistider en gång per dygn och sparar dem i KV,
 // så att varje cron-körning bara behöver kolla vad som är moget att skicka.
 function drawSlots(fromMinute) {
-  const start = Math.max(WINDOW_START_MIN, fromMinute);
-  const span = WINDOW_END_MIN - start;
+  const start = Math.max(DAY_START_MIN, fromMinute);
+  const span = DAY_END_MIN - start;
   if (span <= 0) return [];
 
   // Så många notiser får plats med respektavstånd i den tid som är kvar.
@@ -430,12 +434,12 @@ function drawSlots(fromMinute) {
   for (let i = 0; i < count; i++) {
     const blockStart = start + i * block;
     const candidate = Math.round(blockStart + Math.random() * block);
-    const clamped = Math.min(WINDOW_END_MIN - 1, Math.max(start, candidate));
+    const clamped = Math.min(DAY_END_MIN - 1, Math.max(start, candidate));
     const previous = times.length ? times[times.length - 1] : null;
     times.push(previous !== null ? Math.max(clamped, previous + MIN_GAP_MIN) : clamped);
   }
 
-  return times.filter((t) => t < WINDOW_END_MIN).map((t) => ({ at: t, sent: false }));
+  return times.filter((t) => t < DAY_END_MIN).map((t) => ({ at: t, sent: false }));
 }
 
 async function getSchedule(env, dateStr, minutesOfDay) {

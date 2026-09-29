@@ -28,15 +28,20 @@ avbockningen.
 
 ## Notiserna
 
-Fem slumpade tider per dygn, minst 45 minuter isär, alltid mellan
-**06.15 och 23.45**. Helt tyst mellan 23.45 och 06.15. Samma meddelande
-återkommer inte förrän 25 notiser senare. Om en uppgift fortfarande är
-ogjord blir en notis ibland en knuff om just den i stället för ren pepp.
+Två notiser per dygn:
+
+* **en peppig eller gullig** på slumpad tid mellan 08.00 och 18.00
+* **en hetare** klockan 21.25 varje kväll
+
+Helt tyst mellan 23.45 och 06.15. Samma meddelande återkommer inte förrän
+25 notiser senare. Knuffar om ogjorda uppgifter är avstängda, sätt
+`NUDGE_CHANCE` i workern till 0.3 för att få tillbaka dem.
 
 Texterna ligger i `cloudflare-worker/src/messages.js`, uppdelade i kärlek,
-pepp, bus, fånigt och en hög per uppgift. Antal notiser per dygn ändras
-med `PUSHES_PER_DAY` i `cloudflare-worker/src/worker.js`, och tysta
-perioden med `WINDOW_START_MIN` och `WINDOW_END_MIN` i samma fil.
+pepp, bus, fånigt och en hög per uppgift. Antal dagtidsnotiser ändras med
+`PUSHES_PER_DAY` i `cloudflare-worker/src/worker.js`, dagtidsfönstret med
+`DAY_START_MIN` och `DAY_END_MIN`, kvällens tid med `SPICY_FIXED_MIN` och
+tysta perioden med `WINDOW_START_MIN` och `WINDOW_END_MIN`.
 
 ## Sätta upp push första gången
 
