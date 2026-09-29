@@ -33,8 +33,11 @@ Två notiser per dygn:
 * **en peppig eller gullig** på slumpad tid mellan 08.00 och 18.00
 * **en hetare** klockan 21.25 varje kväll
 
-Helt tyst mellan 23.45 och 06.15. Samma meddelande återkommer inte förrän
-60 notiser senare, och i de mindre listorna aldrig två gånger i rad. Knuffar om ogjorda uppgifter är avstängda, sätt
+Helt tyst mellan 23.45 och 06.15. Texterna dras ur en blandad kortlek: varje meddelande används en gång
+innan något kan komma igen, och när leken tar slut blandas en ny som
+aldrig börjar med samma text som den förra slutade på. Med 120
+dagtidstexter och en notis om dagen betyder det fyra månader innan något
+återkommer. Knuffar om ogjorda uppgifter är avstängda, sätt
 `NUDGE_CHANCE` i workern till 0.3 för att få tillbaka dem.
 
 Texterna ligger i `cloudflare-worker/src/messages.js`, uppdelade i kärlek,

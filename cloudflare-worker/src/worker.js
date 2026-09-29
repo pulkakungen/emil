@@ -10,7 +10,6 @@ import { buildPushPayload } from "@block65/webcrypto-web-push";
 import { handlePanelRequest, mergeSyncedTasks } from "./panel.js";
 import { maybeSendDailySheet } from "./sheets.js";
 import {
-  RANDOM_POOL,
   TASK_TRAKIGT,
   TASK_GOTT,
   TASK_FRU,
@@ -262,9 +261,8 @@ async function rememberSent(env, message) {
   await env.PUSH_KV.put(RECENT_KEY, JSON.stringify(recent));
 }
 
-// Slumpar ur en lista men undviker de senast skickade meddelandena. Små
-// listor, som kvällens, skulle annars ta slut mot minnet och bli helt
-// slumpade igen, så där räcker det att undvika de allra senaste.
+// Slumpar ur en lista men undviker de senast skickade meddelandena. Används
+// för märkesdagarna, som bara har en handfull texter var.
 function pickFresh(list, recent) {
   const fresh = list.filter((m) => !recent.includes(m));
   if (fresh.length >= Math.max(3, Math.ceil(list.length * 0.25))) return pick(fresh);
@@ -274,15 +272,48 @@ function pickFresh(list, recent) {
   return pick(halvfriska.length ? halvfriska : list);
 }
 
-function pickWeighted(recent) {
-  const total = RANDOM_POOL.reduce((sum, p) => sum + p.weight, 0);
-  let roll = Math.random() * total;
-  for (const entry of RANDOM_POOL) {
-    roll -= entry.weight;
-    if (roll <= 0) return pickFresh(entry.list, recent);
+/* --------------------------- kortlekar ---------------------------
+
+   De vanliga notiserna dras ur en blandad kortlek i stället för att
+   slumpas. Varje text används en gång innan någon kan komma igen, och när
+   leken tar slut blandas en ny. Det är skillnaden mellan "sällan samma"
+   och "aldrig samma förrän alla varit med".
+   ----------------------------------------------------------------- */
+const DECK_PREFIX = "deck:";
+
+function blanda(lista) {
+  const kopia = lista.slice();
+  for (let i = kopia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [kopia[i], kopia[j]] = [kopia[j], kopia[i]];
   }
-  return pickFresh(RANDOM_POOL[0].list, recent);
+  return kopia;
 }
+
+async function drawFromDeck(env, namn, lista) {
+  if (!lista.length) return null;
+  const key = DECK_PREFIX + namn;
+  const raw = await env.PUSH_KV.get(key);
+  const sparad = raw ? JSON.parse(raw) : {};
+  const senast = sparad.senast || null;
+
+  // behåll bara texter som fortfarande finns i listan, så en ändrad lista
+  // inte kan dela ut något du tagit bort
+  let kvar = Array.isArray(sparad.kvar) ? sparad.kvar.filter((m) => lista.includes(m)) : [];
+
+  if (!kvar.length) {
+    kvar = blanda(lista);
+    // en ny lek får inte börja med samma text som den förra slutade på
+    if (kvar.length > 1 && kvar[kvar.length - 1] === senast) {
+      [kvar[0], kvar[kvar.length - 1]] = [kvar[kvar.length - 1], kvar[0]];
+    }
+  }
+
+  const message = kvar.pop();
+  await env.PUSH_KV.put(key, JSON.stringify({ kvar, senast: message }));
+  return message;
+}
+
 
 // Vilken meddelandehög som hör till vilken uppgift i appen.
 const TASK_POOLS = {
@@ -311,7 +342,7 @@ const TIME_WINDOWS = { trakigt: [0, 15 * 60], gott: [15 * 60, 24 * 60], fru: [11
 const NUDGE_CHANCE = 0;
 
 function chooseMessage(state, minutesOfDay, weekday, recent) {
-  if (!state || !Array.isArray(state.tasks)) return pickWeighted(recent);
+  if (!state || !Array.isArray(state.tasks)) return null;
 
   const homeOk = homeTaskAllowed(minutesOfDay, weekday);
   const candidates = [];
@@ -329,8 +360,12 @@ function chooseMessage(state, minutesOfDay, weekday, recent) {
   if (candidates.length && Math.random() < NUDGE_CHANCE) {
     return pickFresh(pick(candidates), recent);
   }
-  return pickWeighted(recent);
+  return null; // ingen knuff, anroparen drar ur kortleken i stället
 }
+
+// Alla vanliga dagtidstexter i en lek. Fördelningen följer listornas
+// storlek, alltså mest kärlek och pepp.
+const DAY_POOL = [].concat(LOVE, PEP, BUS, FANIGT);
 
 /* --------------------------- märkesdagar --------------------------- */
 
@@ -410,8 +445,8 @@ async function maybeSendSpicy(env, dateStr, minutesOfDay) {
   if (!post) await env.PUSH_KV.put(key, JSON.stringify({ at: slot, sent: false }), { expirationTtl: 60 * 60 * 48 });
   if (minutesOfDay < slot) return false;
 
-  const recent = await getRecent(env);
-  const message = pickFresh(SPICY, recent);
+  const message = await drawFromDeck(env, "kvall", SPICY);
+  if (!message) return false;
   const delivered = await sendPush(env, message);
   if (!delivered) return false;
 
@@ -522,7 +557,9 @@ async function runSchedule(env) {
   const stateRaw = await env.PUSH_KV.get(STATE_KEY);
   const state = stateRaw ? JSON.parse(stateRaw) : null;
   const recent = await getRecent(env);
-  const message = chooseMessage(state && state.dateStr === dateStr ? state : null, minutesOfDay, weekday, recent);
+  const knuff = chooseMessage(state && state.dateStr === dateStr ? state : null, minutesOfDay, weekday, recent);
+  const message = knuff || (await drawFromDeck(env, "dag", DAY_POOL));
+  if (!message) return;
 
   const delivered = await sendPush(env, message);
   if (!delivered) return; // försök igen vid nästa körning inom respitfönstret
@@ -730,9 +767,8 @@ async function handleRequest(request, env, url) {
 
   // Skickar kvällens hälsning direkt, för att testa den utan att vänta.
   if (path === "/admin/spicy-now" && request.method === "GET") {
-    const recent = await getRecent(env);
-    const message = pickFresh(SPICY, recent);
-    const ok = await sendPush(env, message);
+    const message = await drawFromDeck(env, "kvall", SPICY);
+    const ok = message ? await sendPush(env, message) : false;
     if (ok) await rememberSent(env, message);
     return text(ok ? `Skickad! 💌\n\n${message}` : "Misslyckades, troligen finns ingen aktiv prenumeration just nu.");
   }
