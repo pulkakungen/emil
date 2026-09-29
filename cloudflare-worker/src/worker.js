@@ -46,9 +46,9 @@ const SCHEDULE_PREFIX = "schedule:";
 const HISTORY_PREFIX = "history:";
 const EXTRA_PREFIX = "extra:"; // engångsuppgifter som föräldrapanelen lägger till
 
-// En kärleksnotis om dagen, på slumpad tid under dagtid. Kvällens hälsning
-// ligger utanför den här räkningen, så han får två notiser per dygn.
-const PUSHES_PER_DAY = 1;
+// Kärleksnotiser på slumpade tider under dagtid. Kvällens hälsning ligger
+// utanför den här räkningen, så tre här ger fyra notiser per dygn.
+const PUSHES_PER_DAY = 3;
 
 // Dagtidsfönstret som den notisen lottas inom.
 const DAY_START_MIN = 8 * 60; // 08.00

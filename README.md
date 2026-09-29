@@ -28,9 +28,10 @@ avbockningen.
 
 ## Notiserna
 
-Två notiser per dygn:
+Fyra notiser per dygn:
 
-* **en peppig eller gullig** på slumpad tid mellan 08.00 och 18.00
+* **tre peppiga eller gulliga** på slumpade tider mellan 08.00 och 18.00,
+  minst 45 minuter isär
 * **en hetare** klockan 21.25 varje kväll
 
 Helt tyst mellan 23.45 och 06.15. Samma meddelande återkommer inte förrän
