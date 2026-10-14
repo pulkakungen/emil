@@ -699,6 +699,7 @@ async function handleRequest(request, env, url) {
       id: "extra-" + dateStr + "-" + Math.random().toString(36).slice(2, 8),
       emoji: (body.emoji || "⭐").slice(0, 4),
       text: text.slice(0, 80),
+      gives: ["food", "love", "both", "none"].includes(body.gives) ? body.gives : "both",
       date: dateStr
     };
     list.push(task);

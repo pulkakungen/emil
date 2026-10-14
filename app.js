@@ -283,7 +283,8 @@ function toggleTask(id) {
   }
 
   if (!wasDone) {
-    state.hearts += 5;
+    // "none" kommer från föräldrapanelen: uppgiften bockas av men ger inga hjärtan.
+    if (task.gives !== "none") state.hearts += 5;
     showToast(pick([
       "Snyggt jobbat! 💪",
       "Där satt den, älskling!",
