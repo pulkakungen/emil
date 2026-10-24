@@ -108,7 +108,24 @@ function idleMood() {
   return "idle";
 }
 
+/* Halloween: 24 oktober till 1 november drar tvättbjörnen på sig ett lakan.
+   Lägg till ?halloween=1 eller ?halloween=0 i adressen för att tvinga på
+   eller av spöket, till exempel för att titta på det i förväg. */
+function halloweenTime() {
+  const tvinga = new URLSearchParams(location.search).get("halloween");
+  if (tvinga === "1") return true;
+  if (tvinga === "0") return false;
+  const nu = new Date();
+  const m = nu.getMonth() + 1;
+  const d = nu.getDate();
+  return (m === 10 && d >= 24) || (m === 11 && d <= 1);
+}
+
 function setPose(mood) {
+  if (halloweenTime()) {
+    document.getElementById("raccoon").src = "raccoons/ghost.png";
+    return;
+  }
   const list = POSES[mood] || POSES.idle;
   document.getElementById("raccoon").src = "raccoons/" + pick(list) + ".png";
 }
