@@ -623,6 +623,9 @@ function init() {
 
   loadMessages().then(() => say(pick(messagePool)));
   restoreFromWorker().then(syncToWorker);
+  // Engångsuppgifter från föräldrapanelen. Utan detta syntes de först när
+  // han bockat av något eller bytt app och kommit tillbaka.
+  fetchExtras();
 }
 
 document.addEventListener("DOMContentLoaded", init);
