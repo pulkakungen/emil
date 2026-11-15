@@ -34,7 +34,7 @@ const TASKS = [
   { id: "tankfru", emoji: "💭", text: "Tänk på din fru!", hint: "Tio sekunder. Minns något du gillar med henne, bara för dig själv." },
   { id: "tvatt-sortera", emoji: "🧺", text: "Sortera och lägg in en tvätt", hint: "Varannan dag. Vitt för sig, kulört för sig.", everyDays: 2 },
   { id: "tvatt-kor", emoji: "🌀", text: "Kör en maskin tvätt", hint: "Var tredje dag. Tryck på knappen, tvättbjörnen är personligt engagerad.", everyDays: 3 },
-  { id: "dammsug", emoji: "🔌", text: "Dammsug 1 rum", hint: "Onsdagar och lördagar. Ett rum räcker.", days: [3, 6] },
+  { id: "dammsug", kvar: true, emoji: "🔌", text: "Dammsug 1 rum", hint: "Onsdagar och lördagar. Ett rum räcker.", days: [3, 6] },
   { id: "nedanvaning", emoji: "🧹", text: "Plocka undan 10 saker från nedanvåningen", hint: "Tio saker, inte mer. Räkna dem högt om du vill." },
   { id: "kaffe", emoji: "☕", text: "Städa kaffestationen", hint: "Torka av, skölj ur, fyll på. Morgondagens du blir glad." },
   { id: "stada", emoji: "🧼", text: "Städa nåt!", hint: "Vad som helst. En yta, ett skåp, en hylla. Du väljer." },
@@ -210,6 +210,7 @@ function saveState() {
 function rolloverDay() {
   const today = todayStr();
   if (state.dateStr !== today) {
+    carryOverChores(today);
     state.dateStr = today;
     state.done = {};
   }
@@ -259,7 +260,38 @@ function weekdayOf(dateStr) {
   return new Date(dateStr + "T12:00:00Z").getUTCDay(); // 0 = söndag
 }
 
+/* Sysslor med kvar: true följer med till nästa dag tills de blir gjorda.
+   Allt annat försvinner vid midnatt som vanligt. state.carried håller id
+   och dagen sysslan först skulle ha gjorts. */
+function scheduledOn(task, dateStr) {
+  return !!task.days && task.days.includes(weekdayOf(dateStr));
+}
+
+function carryOverChores(today) {
+  const last = state.dateStr;
+  const carried = { ...(state.carried || {}) };
+  if (last) {
+    TASKS.filter((t) => t.kvar).forEach((t) => {
+      if (state.done[t.id]) delete carried[t.id];
+      else if (!carried[t.id] && scheduledOn(t, last)) carried[t.id] = last;
+      // dagar då appen inte öppnades alls
+      for (let d = addDays(last, 1), i = 0; !carried[t.id] && d < today && i < 31; d = addDays(d, 1), i++) {
+        if (scheduledOn(t, d)) carried[t.id] = d;
+      }
+    });
+  }
+  state.carried = carried;
+}
+
+function carriedLabel(task) {
+  const fran = state.carried && state.carried[task.id];
+  if (!fran || scheduledOn(task, state.dateStr)) return "";
+  const dagar = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
+  return ` <small class="task-carried">sedan ${dagar[weekdayOf(fran)]}</small>`;
+}
+
 function isTaskActive(task) {
+  if (task.kvar && state.carried && state.carried[task.id]) return true;
   // redan avbockad idag: ligger kvar i listan resten av dagen, annars
   // skulle uppgiften försvinna i samma stund den kryssades i
   if (state.done[task.id]) return true;
@@ -356,7 +388,7 @@ function render() {
     li.innerHTML = `
       <span class="task-check" aria-hidden="true">${state.done[task.id] ? "✓" : ""}</span>
       <span class="task-body">
-        <span class="task-text"><span class="task-emoji">${task.emoji}</span>${task.text}</span>
+        <span class="task-text"><span class="task-emoji">${task.emoji}</span>${task.text}${carriedLabel(task)}</span>
         ${task.hint ? `<span class="task-hint">${task.hint}</span>` : ""}
       </span>`;
     list.appendChild(li);

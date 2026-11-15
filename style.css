@@ -354,3 +354,11 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .raccoon-wrap, .confetti { animation: none; }
 }
+
+/* syssla som ligger kvar från en tidigare dag */
+.task-carried {
+  font-size: 0.8em;
+  font-weight: normal;
+  opacity: 0.65;
+  white-space: nowrap;
+}
